@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Teammate - AI Knowledge Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/feather-icons"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FFD700;
+            --primary-dark: #FFC000;
+            --secondary: #00BFFF;
+            --accent: #FFD700;
+            --background: #0d0d0d;
+            --surface: #1a1a1a;
+            --surface-light: #2a2a2a;
+            --text: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, var(--background) 0%, #1a1a1a 50%, #2a2a2a 100%);
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .gradient-border {
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            padding: 1px;
+            border-radius: 12px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, var(--primary), var(--secondary), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        .chat-message {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .typing-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: typing 1.4s infinite ease-in-out;
+        }
+
+        .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+        .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes typing {
+            0%, 80%, 100% {
+                transform: scale(0.8);
+                opacity: 0.5;
+            }
+            40% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .glow {
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.3);
+        }
+
+        .hover-glow:hover {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.5);
+            transform: translateY(-2px);
+            transition: all 0.3s ease;
+        }
+
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .stats-card {
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.1));
+            border: 1px solid rgba(99, 102, 241, 0.2);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .input-field {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        /* Enhanced animations */
+        .bounce-in {
+            animation: bounceIn 0.6s ease-out;
+        }
+
+        @keyframes bounceIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.3);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1.05);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+            background-size: 200% 100%;
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--accent);
+            border-radius: 50%;
+            animation: particle-float 3s infinite ease-in-out;
+        }
+
+        @keyframes particle-float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
+            50% { transform: translateY(-20px) rotate(180deg); opacity: 0.7; }
+        }
+
+        .gradient-bg {
+            background: linear-gradient(45deg, var(--primary), var(--secondary), var(--accent));
+            background-size: 200% 200%;
+            animation: gradient-shift 3s ease infinite;
+        }
+
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Dark mode styles */
+        :root {
+            --primary: #FFD700;
+            --primary-dark: #FFC000;
+            --secondary: #00BFFF;
+            --accent: #FFD700;
+            --background: #0d0d0d;
+            --surface: #1a1a1a;
+            --surface-light: #2a2a2a;
+            --text: #ffffff;
+            --text-muted: #a0a0a0;
+            --border: #333333;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --error: #ef4444;
+        }
+
+        [data-theme="light"] {
+            --background: #ffffff;
+            --surface: #f8fafc;
+            --surface-light: #f1f5f9;
+            --text: #1e293b;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --primary: #FFD700;
+            --primary-dark: #FFC000;
+            --secondary: #00BFFF;
+            --accent: #FFD700;
+        }
+
+        /* Apply theme colors to body */
+        body {
+            background: linear-gradient(135deg, var(--background) 0%, var(--surface) 50%, var(--surface-light) 100%);
+            color: var(--text);
+        }
+
+        /* Update glass effect for light theme */
+        [data-theme="light"] .glass {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+
+        /* Update input field for light theme */
+        [data-theme="light"] .input-field {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text);
+        }
+
+        /* Update text colors for light theme */
+        [data-theme="light"] .text-gray-200 {
+            color: var(--text);
+        }
+
+        [data-theme="light"] .text-gray-400 {
+            color: var(--text-muted);
+        }
+
+        [data-theme="light"] .text-gray-300 {
+            color: var(--text);
+        }
+
+        /* Ensure numbers and stats are visible in light theme */
+        [data-theme="light"] .text-white {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] .text-2xl {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] .text-lg {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] .font-bold {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] .font-semibold {
+            color: var(--text) !important;
+        }
+
+        [data-theme="light"] .font-medium {
+            color: var(--text) !important;
+        }
+
+        /* Ensure stats cards are visible in light theme */
+        [data-theme="light"] .stats-card {
+            background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(0, 191, 255, 0.1));
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        /* Ensure glass elements have proper contrast in light theme */
+        [data-theme="light"] .glass {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            color: var(--text);
+        }
+
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .mobile-hidden {
+                display: none;
+            }
+            
+            .mobile-full {
+                width: 100%;
+            }
+            
+            .mobile-stack {
+                flex-direction: column;
+            }
+            
+            .mobile-text-sm {
+                font-size: 0.875rem;
+            }
+            
+            .mobile-p-2 {
+                padding: 0.5rem;
+            }
+        }
+
+        @media (max-width: 640px) {
+            .sm-hidden {
+                display: none;
+            }
+            
+            .sm-text-xs {
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Theme toggle animation */
+        .theme-toggle {
+            transition: all 0.3s ease;
+            transform: rotate(0deg);
+        }
+
+        .theme-toggle:hover {
+            transform: rotate(180deg);
+        }
+
+        /* Mobile menu */
+        .mobile-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+        }
+
+        .mobile-menu.open {
+            transform: translateX(0);
+        }
+
+        /* Enhanced responsive grid */
+        .responsive-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .responsive-grid {
+                grid-template-columns: 1fr 300px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .responsive-grid {
+                grid-template-columns: 1fr 350px;
+            }
+        }
+
+        /* Mobile sidebar improvements */
+        @media (max-width: 1023px) {
+            .sidebar-mobile {
+                order: 2;
+                margin-top: 1rem;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <!-- Header -->
+    <header class="glass border-b border-white/10 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo and Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-r from-yellow-400 to-blue-400 rounded-lg flex items-center justify-center floating">
+                        <i data-feather="cpu" class="w-6 h-6 text-white"></i>
+                    </div>
+                    <div class="mobile-hidden">
+                        <h1 class="text-xl font-bold gradient-text">Agentic Teammate</h1>
+                        <p class="text-xs text-gray-400">AI Knowledge Explorer</p>
+                    </div>
+                    <div class="sm:hidden">
+                        <h1 class="text-lg font-bold gradient-text">AT</h1>
+                    </div>
+                </div>
+
+                <!-- Desktop Controls -->
+                <div class="hidden md:flex items-center space-x-4">
+                    <a href="/" class="text-sm text-gray-300 hover:text-white transition-colors">Home</a>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span class="text-gray-300">System Online</span>
+                    </div>
+                    
+                    <!-- Theme Toggle -->
+                    <button onclick="toggleTheme()" class="p-2 rounded-lg glass hover-glow theme-toggle" id="theme-toggle">
+                        <i data-feather="moon" class="w-5 h-5" id="theme-icon"></i>
+                    </button>
+                </div>
+
+                <!-- Mobile Controls -->
+                <div class="flex md:hidden items-center space-x-2">
+                    <button onclick="toggleTheme()" class="p-2 rounded-lg glass hover-glow theme-toggle" id="theme-toggle-mobile">
+                        <i data-feather="moon" class="w-4 h-4" id="theme-icon-mobile"></i>
+                    </button>
+                    <button onclick="toggleMobileMenu()" class="p-2 rounded-lg glass hover-glow">
+                        <i data-feather="menu" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Mobile Menu -->
+    <div class="mobile-menu" id="mobile-menu">
+        <div class="glass h-full w-80 p-6">
+            <div class="flex items-center justify-between mb-6">
+                <h2 class="text-lg font-bold gradient-text">Menu</h2>
+                <button onclick="toggleMobileMenu()" class="p-2 rounded-lg glass hover-glow">
+                    <i data-feather="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <div class="glass rounded-lg p-4">
+                    <h3 class="font-semibold text-white mb-2">System Status</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-400">Vector Store</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-green-400">Online</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm text-gray-400">AI Model</span>
+                            <div class="flex items-center space-x-2">
+                                <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                <span class="text-sm text-green-400">Ready</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass rounded-lg p-4">
+                    <h3 class="font-semibold text-white mb-2">Navigation</h3>
+                    <div class="space-y-2">
+                        <a href="/" class="block w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
+                            <div class="flex items-center space-x-2">
+                                <i data-feather="home" class="w-4 h-4"></i>
+                                <span class="text-sm">Home</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <div class="glass rounded-lg p-4">
+                    <h3 class="font-semibold text-white mb-2">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <button onclick="crawlGitHub(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
+                            <div class="flex items-center space-x-2">
+                                <i data-feather="github" class="w-4 h-4"></i>
+                                <span class="text-sm">Crawl GitHub</span>
+                            </div>
+                        </button>
+                        <button onclick="crawlConfluence(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
+                            <div class="flex items-center space-x-2">
+                                <i data-feather="book-open" class="w-4 h-4"></i>
+                                <span class="text-sm">Crawl Confluence</span>
+                            </div>
+                        </button>
+                        <button onclick="crawlJira(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
+                            <div class="flex items-center space-x-2">
+                                <i data-feather="trello" class="w-4 h-4"></i>
+                                <span class="text-sm">Crawl Jira</span>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8">
+            <!-- Main Chat Area -->
+            <div class="lg:col-span-3">
+                <div class="glass rounded-2xl p-4 sm:p-6 h-[500px] sm:h-[600px] flex flex-col">
+                    <div class="flex items-center justify-between mb-4 sm:mb-6">
+                        <h2 class="text-lg sm:text-xl font-semibold gradient-text">Agentic Teammate</h2>
+                        <div class="flex items-center space-x-2 mobile-hidden">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-gray-400">Ready to help</span>
+                        </div>
+                        <div class="flex items-center space-x-2 sm:hidden">
+                            <div class="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="chat-messages" class="flex-1 overflow-y-auto scrollbar-hide space-y-4 mb-4 p-2">
+                        <div class="chat-message">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 bg-gradient-to-r from-yellow-400 to-blue-400 rounded-full flex items-center justify-center shadow-lg">
+                                    <i data-feather="message-circle" class="w-4 h-4 text-white"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="glass rounded-lg p-4 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                                        <p class="text-gray-200 leading-relaxed">Hello! I'm your AI Knowledge Assistant. I can help you find information from your organization's knowledge base. What would you like to know?</p>
+                                    </div>
+                                    <div class="text-xs text-gray-400 mt-1">
+                                        Just now
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Typing Indicator -->
+                    <div id="typing-indicator" class="hidden mb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="w-8 h-8 bg-gradient-to-r from-yellow-400 to-blue-400 rounded-full flex items-center justify-center">
+                                <i data-feather="message-circle" class="w-4 h-4 text-white"></i>
+                            </div>
+                            <div class="glass rounded-lg p-4">
+                                <div class="typing-indicator">
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                    <div class="typing-dot"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="flex space-x-2 sm:space-x-3">
+                        <div class="flex-1">
+                            <input type="text" id="query-input" 
+                                   class="w-full input-field rounded-lg px-3 sm:px-4 py-2 sm:py-3 text-gray-200 placeholder-gray-400 focus:outline-none mobile-text-sm"
+                                   placeholder="Ask me anything..."
+                                   onkeypress="handleKeyPress(event)">
+                        </div>
+                        <button onclick="sendQuery()" 
+                                class="btn-primary px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-medium text-white hover-glow">
+                            <i data-feather="send" class="w-4 h-4 sm:w-5 sm:h-5"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="lg:col-span-1 space-y-4 sm:space-y-6 sidebar-mobile">
+                <!-- Stats Cards -->
+                <div class="space-y-3 sm:space-y-4">
+                    <h3 class="text-lg font-semibold gradient-text">System Stats</h3>
+                    <div class="stats-card rounded-xl p-4 fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Documents Indexed</p>
+                                <p class="text-2xl font-bold text-white" id="documents-count">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-lg flex items-center justify-center">
+                                <i data-feather="file-text" class="w-6 h-6 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-card rounded-xl p-4 fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">Knowledge Sources</p>
+                                <p class="text-2xl font-bold text-white" id="sources-count">0</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-r from-green-500 to-emerald-500 rounded-lg flex items-center justify-center">
+                                <i data-feather="database" class="w-6 h-6 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="stats-card rounded-xl p-4 fade-in">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <p class="text-sm text-gray-400">AI Model</p>
+                                                                 <p class="text-lg font-semibold text-white" id="model-name">Llama 3.1 8B Instruct</p>
+                            </div>
+                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
+                                <i data-feather="cpu" class="w-6 h-6 text-white"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold gradient-text">Quick Actions</h3>
+                    <div class="space-y-3">
+                        <button onclick="crawlGitHub()" 
+                                class="w-full glass rounded-lg p-4 text-left hover-glow transition-all duration-300">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
+                                    <i data-feather="github" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-white">Crawl GitHub</p>
+                                    <p class="text-sm text-gray-400">Index repositories</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        <button onclick="crawlConfluence()" 
+                                class="w-full glass rounded-lg p-4 text-left hover-glow transition-all duration-300">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="book-open" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-white">Crawl Confluence</p>
+                                    <p class="text-sm text-gray-400">Index documentation</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        <button onclick="crawlJira()" 
+                                class="w-full glass rounded-lg p-4 text-left hover-glow transition-all duration-300">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-blue-400 to-blue-500 rounded-lg flex items-center justify-center">
+                                    <i data-feather="trello" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-white">Crawl Jira</p>
+                                    <p class="text-sm text-gray-400">Index tickets</p>
+                                </div>
+                            </div>
+                        </button>
+
+                        <button onclick="getStats()" 
+                                class="w-full glass rounded-lg p-4 text-left hover-glow transition-all duration-300">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-10 h-10 bg-gradient-to-r from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                                    <i data-feather="bar-chart-2" class="w-5 h-5 text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="font-medium text-white">Refresh Stats</p>
+                                    <p class="text-sm text-gray-400">Update metrics</p>
+                                </div>
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- System Status -->
+                <div class="space-y-4">
+                    <h3 class="text-lg font-semibold gradient-text">System Status</h3>
+                    <div class="glass rounded-xl p-4">
+                        <div class="space-y-3">
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-400">Vector Store</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-green-400">Online</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-400">AI Model</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full"></div>
+                                    <span class="text-sm text-green-400">Ready</span>
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-between">
+                                <span class="text-sm text-gray-400">Memory</span>
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                    <span class="text-sm text-blue-400">Active</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Feather icons
+        feather.replace();
+
+        // Global variables
+        let isProcessing = false;
+
+        // Handle Enter key press
+        function handleKeyPress(event) {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
+                sendQuery();
+            }
+        }
+
+        // Send query to the API
+        async function sendQuery() {
+            const input = document.getElementById('query-input');
+            const query = input.value.trim();
+            
+            if (!query || isProcessing) return;
+
+            isProcessing = true;
+            input.value = '';
+
+            // Add user message
+            addMessage(query, 'user');
+            
+            // Show typing indicator
+            showTypingIndicator();
+
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const data = await response.json();
+                
+                // Hide typing indicator
+                hideTypingIndicator();
+
+                if (response.ok) {
+                    addMessage(data.response, 'assistant');
+                } else {
+                    addMessage('Sorry, I encountered an error processing your request. Please try again.', 'assistant');
+                }
+            } catch (error) {
+                hideTypingIndicator();
+                addMessage('Sorry, I encountered an error processing your request. Please try again.', 'assistant');
+            }
+
+            isProcessing = false;
+        }
+
+        // Add message to chat
+        function addMessage(content, role) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message';
+
+            const icon = role === 'user' ? 'user' : 'message-circle';
+            const bgClass = role === 'user' ? 'bg-gradient-to-r from-yellow-400 to-blue-400' : 'bg-gradient-to-r from-yellow-400 to-blue-400';
+            const messageBgClass = role === 'user' ? 'bg-gradient-to-r from-yellow-400/20 to-blue-400/20' : '';
+
+            messageDiv.innerHTML = `
+                <div class="flex items-start space-x-3 ${role === 'user' ? 'flex-row-reverse space-x-reverse' : ''}">
+                    <div class="w-8 h-8 ${bgClass} rounded-full flex items-center justify-center shadow-lg">
+                        <i data-feather="${icon}" class="w-4 h-4 text-white"></i>
+                    </div>
+                    <div class="flex-1 ${role === 'user' ? 'text-right' : ''}">
+                        <div class="glass rounded-lg p-4 ${messageBgClass} shadow-lg hover:shadow-xl transition-shadow duration-300">
+                            <p class="text-gray-200 leading-relaxed">${content}</p>
+                        </div>
+                        <div class="text-xs text-gray-400 mt-1 ${role === 'user' ? 'text-right' : ''}">
+                            ${new Date().toLocaleTimeString()}
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            // Reinitialize Feather icons
+            feather.replace();
+        }
+
+        // Show typing indicator
+        function showTypingIndicator() {
+            document.getElementById('typing-indicator').classList.remove('hidden');
+        }
+
+        // Hide typing indicator
+        function hideTypingIndicator() {
+            document.getElementById('typing-indicator').classList.add('hidden');
+        }
+
+        // Crawl functions
+        async function crawlGitHub() {
+            try {
+                const response = await fetch('/api/crawl/github', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    addMessage('GitHub repositories crawled successfully!', 'assistant');
+                    getStats();
+                    showSuccessAnimation();
+                } else {
+                    addMessage('Error crawling GitHub repositories.', 'assistant');
+                }
+            } catch (error) {
+                addMessage('Error crawling GitHub repositories.', 'assistant');
+            }
+        }
+
+        async function crawlConfluence() {
+            try {
+                const response = await fetch('/api/crawl/confluence', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    addMessage('Confluence pages crawled successfully!', 'assistant');
+                    getStats();
+                    showSuccessAnimation();
+                } else {
+                    addMessage('Error crawling Confluence pages.', 'assistant');
+                }
+            } catch (error) {
+                addMessage('Error crawling Confluence pages.', 'assistant');
+            }
+        }
+
+        async function crawlJira() {
+            try {
+                const response = await fetch('/api/crawl/jira', { method: 'POST' });
+                const data = await response.json();
+                if (response.ok) {
+                    addMessage('Jira tickets crawled successfully!', 'assistant');
+                    getStats();
+                    showSuccessAnimation();
+                } else {
+                    addMessage('Error crawling Jira tickets.', 'assistant');
+                }
+            } catch (error) {
+                addMessage('Error crawling Jira tickets.', 'assistant');
+            }
+        }
+
+        // Get and update stats
+        async function getStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    document.getElementById('documents-count').textContent = data.documents || 0;
+                    document.getElementById('sources-count').textContent = data.sources || 0;
+                }
+            } catch (error) {
+                console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Theme management - force dark theme for chat page
+        let currentTheme = 'dark';
+        localStorage.setItem('theme', 'dark');
+        
+        // Initialize theme
+        function initializeTheme() {
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            updateThemeIcons();
+            
+            // Apply theme colors immediately
+            const body = document.body;
+            body.style.background = `linear-gradient(135deg, var(--background) 0%, var(--surface) 50%, var(--surface-light) 100%)`;
+            
+            // Update all glass elements
+            const glassElements = document.querySelectorAll('.glass');
+            glassElements.forEach(element => {
+                if (currentTheme === 'light') {
+                    element.style.background = 'rgba(0, 0, 0, 0.05)';
+                    element.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                    element.style.color = 'var(--text)';
+                } else {
+                    element.style.background = 'rgba(255, 255, 255, 0.05)';
+                    element.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }
+            });
+            
+            // Update input fields
+            const inputFields = document.querySelectorAll('.input-field');
+            inputFields.forEach(input => {
+                if (currentTheme === 'light') {
+                    input.style.background = 'rgba(0, 0, 0, 0.05)';
+                    input.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                    input.style.color = 'var(--text)';
+                } else {
+                    input.style.background = 'rgba(255, 255, 255, 0.05)';
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    input.style.color = '#e2e8f0';
+                }
+            });
+            
+            // Update text colors for light theme
+            if (currentTheme === 'light') {
+                const whiteTextElements = document.querySelectorAll('.text-white');
+                whiteTextElements.forEach(element => {
+                    element.style.color = 'var(--text)';
+                });
+                
+                const boldElements = document.querySelectorAll('.font-bold, .font-semibold, .font-medium');
+                boldElements.forEach(element => {
+                    element.style.color = 'var(--text)';
+                });
+            }
+        }
+        
+        // Toggle theme
+        function toggleTheme() {
+            currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            localStorage.setItem('theme', currentTheme);
+            updateThemeIcons();
+            
+            // Force re-render of theme-dependent elements
+            const body = document.body;
+            body.style.transition = 'all 0.3s ease';
+            body.style.background = `linear-gradient(135deg, var(--background) 0%, var(--surface) 50%, var(--surface-light) 100%)`;
+            
+            // Update all glass elements
+            const glassElements = document.querySelectorAll('.glass');
+            glassElements.forEach(element => {
+                if (currentTheme === 'light') {
+                    element.style.background = 'rgba(0, 0, 0, 0.05)';
+                    element.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                    element.style.color = 'var(--text)';
+                } else {
+                    element.style.background = 'rgba(255, 255, 255, 0.05)';
+                    element.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                }
+            });
+            
+            // Update input fields
+            const inputFields = document.querySelectorAll('.input-field');
+            inputFields.forEach(input => {
+                if (currentTheme === 'light') {
+                    input.style.background = 'rgba(0, 0, 0, 0.05)';
+                    input.style.borderColor = 'rgba(0, 0, 0, 0.1)';
+                    input.style.color = 'var(--text)';
+                } else {
+                    input.style.background = 'rgba(255, 255, 255, 0.05)';
+                    input.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    input.style.color = '#e2e8f0';
+                }
+            });
+            
+            // Update text colors for light theme
+            if (currentTheme === 'light') {
+                const whiteTextElements = document.querySelectorAll('.text-white');
+                whiteTextElements.forEach(element => {
+                    element.style.color = 'var(--text)';
+                });
+                
+                const boldElements = document.querySelectorAll('.font-bold, .font-semibold, .font-medium');
+                boldElements.forEach(element => {
+                    element.style.color = 'var(--text)';
+                });
+            } else {
+                // Reset to dark theme colors
+                const whiteTextElements = document.querySelectorAll('.text-white');
+                whiteTextElements.forEach(element => {
+                    element.style.color = '#ffffff';
+                });
+                
+                const boldElements = document.querySelectorAll('.font-bold, .font-semibold, .font-medium');
+                boldElements.forEach(element => {
+                    element.style.color = '#ffffff';
+                });
+            }
+        }
+        
+        // Update theme icons
+        function updateThemeIcons() {
+            const icons = document.querySelectorAll('#theme-icon, #theme-icon-mobile');
+            icons.forEach(icon => {
+                if (currentTheme === 'dark') {
+                    icon.setAttribute('data-feather', 'moon');
+                } else {
+                    icon.setAttribute('data-feather', 'sun');
+                }
+            });
+            feather.replace();
+        }
+        
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('open');
+        }
+        
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(event) {
+            const menu = document.getElementById('mobile-menu');
+            const menuButton = event.target.closest('button[onclick="toggleMobileMenu()"]');
+            
+            if (!menu.contains(event.target) && !menuButton && menu.classList.contains('open')) {
+                menu.classList.remove('open');
+            }
+        });
+
+        // Initialize stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Ensure dark theme is set for chat page
+            currentTheme = 'dark';
+            localStorage.setItem('theme', 'dark');
+            document.documentElement.setAttribute('data-theme', 'dark');
+            
+            initializeTheme();
+            getStats();
+            createParticles();
+            initializeAnimations();
+        });
+
+        // Create floating particles effect
+        function createParticles() {
+            const container = document.body;
+            for (let i = 0; i < 20; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.animationDelay = Math.random() * 3 + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        // Initialize enhanced animations
+        function initializeAnimations() {
+            // Add shimmer effect to stats cards
+            const statsCards = document.querySelectorAll('.stats-card');
+            statsCards.forEach((card, index) => {
+                card.style.animationDelay = index * 0.2 + 's';
+                card.classList.add('bounce-in');
+            });
+
+            // Add gradient background animation to header
+            const header = document.querySelector('header');
+            header.classList.add('gradient-bg');
+
+            // Add hover effects to action buttons
+            const actionButtons = document.querySelectorAll('button[onclick^="crawl"]');
+            actionButtons.forEach(button => {
+                button.addEventListener('mouseenter', function() {
+                    this.classList.add('shimmer');
+                });
+                button.addEventListener('mouseleave', function() {
+                    this.classList.remove('shimmer');
+                });
+            });
+        }
+
+        // Enhanced message animation
+        function addMessageWithAnimation(content, role) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'chat-message bounce-in';
+            
+            // ... rest of the addMessage logic
+            addMessage(content, role);
+        }
+
+        // Add typing sound effect (optional)
+        function playTypingSound() {
+            // This could be implemented with Web Audio API
+            console.log('Typing sound effect');
+        }
+
+        // Add success animation
+        function showSuccessAnimation() {
+            const successDiv = document.createElement('div');
+            successDiv.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg bounce-in';
+            successDiv.textContent = '✅ Success!';
+            document.body.appendChild(successDiv);
+            
+            setTimeout(() => {
+                successDiv.remove();
+            }, 3000);
+        }
+    </script>
+</body>
+</html> 
