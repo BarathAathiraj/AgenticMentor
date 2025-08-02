@@ -500,6 +500,9 @@ graph TD
     def enhance_response_structure(response_text: str, query_text: str, search_results: List[SearchResult]) -> str:
         """Enhance the structure of a response with better formatting and flowcharts"""
         
+        # Clean up any duplicate sections first
+        response_text = EnhancedResponseFormatter._clean_duplicate_sections(response_text)
+        
         # Ensure the response starts with a main heading
         if not response_text.strip().startswith('##'):
             response_text = f"## 🚀 **Analysis Results**\n\n{response_text}"
@@ -519,21 +522,44 @@ graph TD
             comparison_table = EnhancedResponseFormatter._generate_comparison_table(query_text, search_results)
             response_text += f"\n\n### 📊 **Comparison Analysis**\n{comparison_table}"
         
-        # Add summary section if not present
+        # Add summary section if not present (only one summary section)
         if "### 💡 **Summary**" not in response_text and "### 📋 **Summary**" not in response_text:
             summary = EnhancedResponseFormatter._generate_summary(response_text)
             response_text += f"\n\n### 💡 **Summary**\n{summary}"
         
-        # Add next steps if not present
+        # Add next steps if not present (only one next steps section)
         if "### 📋 **Next Steps**" not in response_text and "### 🎯 **Next Steps**" not in response_text:
             next_steps = EnhancedResponseFormatter._generate_next_steps(query_text, search_results)
             response_text += f"\n\n### 🎯 **Next Steps**\n{next_steps}"
         
-        # Add follow-up recommendations
-        follow_ups = EnhancedResponseFormatter._generate_follow_up_recommendations(query_text)
-        response_text += f"\n\n### 💬 **Follow-up Options**\n{follow_ups}"
+        # Add follow-up recommendations (only if not already present)
+        if "### 💬 **Follow-up Options**" not in response_text:
+            follow_ups = EnhancedResponseFormatter._generate_follow_up_recommendations(query_text)
+            response_text += f"\n\n### 💬 **Follow-up Options**\n{follow_ups}"
         
         return response_text
+    
+    @staticmethod
+    def _clean_duplicate_sections(response_text: str) -> str:
+        """Clean up duplicate sections in the response"""
+        lines = response_text.split('\n')
+        cleaned_lines = []
+        seen_sections = set()
+        
+        for line in lines:
+            # Check if this is a section header
+            if line.strip().startswith('###'):
+                section_name = line.strip()
+                if section_name in seen_sections:
+                    # Skip duplicate sections
+                    continue
+                else:
+                    seen_sections.add(section_name)
+                    cleaned_lines.append(line)
+            else:
+                cleaned_lines.append(line)
+        
+        return '\n'.join(cleaned_lines)
     
     @staticmethod
     def _generate_simple_process_flowchart(query_text: str) -> str:
@@ -668,4 +694,71 @@ graph TD
             ]
         
         # Return only first 3 follow-ups
-        return "\n".join([f"- {follow_up}" for follow_up in follow_ups[:3]]) 
+        return "\n".join([f"- {follow_up}" for follow_up in follow_ups[:3]])
+    
+    @staticmethod
+    def _generate_helpful_fallback_response(query_text: str) -> str:
+        """Generate a helpful fallback response instead of generic content"""
+        query_lower = query_text.lower()
+        
+        if any(word in query_lower for word in ['hello', 'hi', 'hey', 'greeting']):
+            return """## 🤖 **Welcome to Agentic Mentor**
+
+### 🎯 **How I Can Help**
+- **Project Analysis** - Understand codebases and architectures
+- **Process Optimization** - Improve workflows and efficiency
+- **Technical Guidance** - Get implementation advice
+- **Knowledge Discovery** - Find relevant information
+
+### 💡 **Getting Started**
+- Ask about specific projects or repositories
+- Request process flowcharts and diagrams
+- Get technical implementation guidance
+- Explore knowledge base contents
+
+### 🎯 **Next Steps**
+1. Ask about a specific project
+2. Request a process analysis
+3. Get technical implementation help
+4. Explore available knowledge"""
+        
+        elif any(word in query_lower for word in ['help', 'what', 'how']):
+            return """## 🆘 **Agentic Mentor Help**
+
+### 🎯 **My Capabilities**
+- **Project Analysis** - Deep dive into codebases
+- **Process Mapping** - Create workflow diagrams
+- **Technical Guidance** - Implementation strategies
+- **Knowledge Search** - Find relevant information
+
+### 💡 **Example Queries**
+- "Tell me about the project architecture"
+- "Create a process flowchart for deployment"
+- "Explain the authentication system"
+- "Show me the tech stack comparison"
+
+### 🎯 **Next Steps**
+1. Ask about a specific project
+2. Request a process analysis
+3. Get technical guidance
+4. Explore knowledge base"""
+        
+        else:
+            return """## 📋 **Information Request**
+
+### 🎯 **What I Found**
+- Your query requires more specific context
+- I can help with projects, processes, and technical topics
+- Let me know what specific area you'd like to explore
+
+### 💡 **Suggested Topics**
+- **Project Analysis** - Codebases and architectures
+- **Process Optimization** - Workflows and efficiency
+- **Technical Implementation** - Development guidance
+- **Knowledge Discovery** - Information search
+
+### 🎯 **Next Steps**
+1. Ask about a specific project or repository
+2. Request a process or workflow analysis
+3. Get technical implementation guidance
+4. Explore available knowledge sources""" 

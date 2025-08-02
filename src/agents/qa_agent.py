@@ -215,6 +215,17 @@ CRITICAL: Keep it SHORT and CRISP. Each sentence on new line. Each bullet on sin
         if not response_text or response_text.strip() == "":
             response_text = "I apologize, but I couldn't generate a proper response. Please try rephrasing your question."
         
+        # Check for generic responses and improve them
+        if any(phrase in response_text.lower() for phrase in [
+            "no specific context was provided",
+            "awaiting further instructions", 
+            "further information is needed",
+            "general inquiry",
+            "n/a"
+        ]):
+            # Generate a more helpful response
+            response_text = EnhancedResponseFormatter._generate_helpful_fallback_response(query_text)
+        
         # Enhance the response with structured formatting
         response_text = EnhancedResponseFormatter.enhance_response_structure(response_text, query_text, search_results)
         
