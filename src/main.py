@@ -110,15 +110,22 @@ class AgenticMentor:
                 
                 # Store in memory for learning
                 try:
+                    from src.models import AgentResponse
+                    
+                    # Create proper AgentResponse object
+                    agent_response = AgentResponse(
+                        query_id=query_obj.id,
+                        response_text=result.get("text", ""),
+                        sources=result.get("sources", []),
+                        confidence_score=result.get("confidence", 0.0),
+                        reasoning=result.get("reasoning", ""),
+                        suggested_follow_up=result.get("follow_up", "")
+                    )
+                    
                     await self.memory_agent.process({
                         "operation": "store",
                         "query": query_obj,
-                        "response": {
-                            "response_text": result.get("text", ""),
-                            "confidence_score": result.get("confidence", 0.0),
-                            "sources": result.get("sources", []),
-                            "suggested_follow_up": result.get("follow_up", "")
-                        },
+                        "response": agent_response,
                         "user_id": user_id
                     })
                 except Exception as e:
