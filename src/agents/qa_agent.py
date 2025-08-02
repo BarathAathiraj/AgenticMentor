@@ -87,111 +87,52 @@ class QAAgent(BaseAgent):
         # Prepare context from search results
         context_text = self._prepare_context(search_results)
         
-        # Build enhanced system prompt
+        # Build enhanced system prompt for crisp responses
         system_prompt = """You are Agentic Mentor, an advanced AI-powered knowledge assistant. 
 
 CRITICAL FORMATTING RULES:
-- ALWAYS use proper markdown formatting
-- ALWAYS put each sentence on a new line
-- ALWAYS put each bullet point on a single line
-- ALWAYS separate sections with blank lines
-- NEVER put all content in one paragraph
+- Keep responses SHORT and CRISP
+- Use proper markdown formatting
+- Put each sentence on a new line
+- Put each bullet point on a single line
+- Separate sections with blank lines
 - Use ## for main headings
 - Use ### for subheadings
 - Use bullet points (-) for lists
 - Use **bold** for important terms
 - Include emojis in headings
+- MAXIMUM 3-4 sections per response
+- MAXIMUM 3 bullet points per section
 
-MANDATORY STRUCTURE:
+MANDATORY STRUCTURE FOR PROJECTS:
 ## 🚀 [Project Name] Analysis
 
 ### 📊 Overview
-- **Key Information:** [Summary]
-
-- **Main Purpose:** [What it does]
-
-- **Current Status:** [Development stage]
-
-### 🔧 Technical Details
-| Aspect | Details |
-|--------|---------|
-| **Technology Stack** | [Technologies] |
-| **Architecture** | [System design] |
-| **Dependencies** | [Libraries/frameworks] |
-
-### 📈 Process Flow
-```mermaid
-graph TD
-    A[Start] --> B[Step 1]
-    B --> C[Step 2]
-    C --> D[End]
-```
+- **Purpose:** [What it does]
+- **Status:** [Development stage]
+- **Tech Stack:** [Key technologies]
 
 ### 🎯 Key Features
-- **Feature 1:** [Description]
-
-- **Feature 2:** [Description]
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
 
 ### 💡 Summary
 - [Key point 1]
-
 - [Key point 2]
 
-CRITICAL: Follow this EXACT structure. Each sentence on new line. Each bullet on single line."""
-        
-        if search_results:
-            user_prompt = f"""Query: {query_text}
+### 🎯 Next Steps
+1. [Action 1]
+2. [Action 2]
+3. [Action 3]
 
-Context: {context_text}
-
-Provide a well-structured response using this format:
-
-## 🚀 [Project Name] Analysis
-
-### 📊 Overview
-- **Key Information:** [Summary]
-
-- **Main Purpose:** [What it does]
-
-- **Current Status:** [Development stage]
-
-### 🔧 Technical Details
-| Aspect | Details |
-|--------|---------|
-| **Technology Stack** | [Technologies] |
-| **Architecture** | [System design] |
-| **Dependencies** | [Libraries/frameworks] |
-
-### 📈 Process Flow
-```mermaid
-graph TD
-    A[Start] --> B[Step 1]
-    B --> C[Step 2]
-    C --> D[End]
-```
-
-### 🎯 Key Features
-- **Feature 1:** [Description]
-
-- **Feature 2:** [Description]
-
-### 💡 Summary
-- [Key point 1]
-
-- [Key point 2]
-
-CRITICAL: Each sentence on new line. Each bullet on single line."""
-        else:
-            user_prompt = f"""Query: {query_text}
-
-Provide a simple, well-structured response:
-
+MANDATORY STRUCTURE FOR GENERAL QUERIES:
 ## 📋 [Topic] Information
 
 ### 🎯 Key Points
-- **Point 1:** [Description]
-
-- **Point 2:** [Description]
+- [Point 1]
+- [Point 2]
+- [Point 3]
 
 ### 🔧 Technical Details
 | Aspect | Details |
@@ -199,7 +140,69 @@ Provide a simple, well-structured response:
 | **Category** | [Classification] |
 | **Technology** | [Tech stack] |
 
-CRITICAL: Each sentence on new line. Each bullet on single line."""
+### 💡 Summary
+- [Key takeaway 1]
+- [Key takeaway 2]
+
+CRITICAL: Keep it SHORT, CRISP, and STRUCTURED. Each sentence on new line. Each bullet on single line."""
+        
+        # Determine if this is a project-specific query
+        is_project_query = any(word in query_text.lower() for word in ['project', 'repository', 'codebase', 'application'])
+        
+        if is_project_query:
+            user_prompt = f"""Query: {query_text}
+
+Context: {context_text}
+
+Provide a SHORT, CRISP, well-structured response:
+
+## 🚀 [Project Name] Analysis
+
+### 📊 Overview
+- **Purpose:** [What it does]
+- **Status:** [Development stage]
+- **Tech Stack:** [Key technologies]
+
+### 🎯 Key Features
+- [Feature 1]
+- [Feature 2]
+- [Feature 3]
+
+### 💡 Summary
+- [Key point 1]
+- [Key point 2]
+
+### 🎯 Next Steps
+1. [Action 1]
+2. [Action 2]
+3. [Action 3]
+
+CRITICAL: Keep it SHORT and CRISP. Each sentence on new line. Each bullet on single line."""
+        else:
+            user_prompt = f"""Query: {query_text}
+
+Context: {context_text}
+
+Provide a SHORT, CRISP, well-structured response:
+
+## 📋 [Topic] Information
+
+### 🎯 Key Points
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+### 🔧 Technical Details
+| Aspect | Details |
+|--------|---------|
+| **Category** | [Classification] |
+| **Technology** | [Tech stack] |
+
+### 💡 Summary
+- [Key takeaway 1]
+- [Key takeaway 2]
+
+CRITICAL: Keep it SHORT and CRISP. Each sentence on new line. Each bullet on single line."""
         
         messages = [
             {"role": "system", "content": system_prompt},
@@ -220,9 +223,10 @@ CRITICAL: Each sentence on new line. Each bullet on single line."""
         
         return {
             "text": response_text,
-            "confidence": analysis["confidence"],
-            "reasoning": analysis["reasoning"],
-            "follow_up": analysis["follow_up"]
+            "confidence": analysis.get("confidence", 0.7),
+            "reasoning": analysis.get("reasoning", "Based on available knowledge"),
+            "follow_up": analysis.get("follow_up", "What else would you like to know?"),
+            "sources": [result.dict() for result in search_results[:3]]  # Limit to 3 sources
         }
     
     def _prepare_context(self, search_results: List[SearchResult]) -> str:
@@ -260,40 +264,40 @@ CRITICAL: Each sentence on new line. Each bullet on single line."""
         # Extract reasoning
         reasoning = f"Generated response based on {len(search_results)} relevant sources"
         
-        # Generate follow-up suggestions based on query type
+        # Generate crisp follow-up suggestions based on query type
         query_lower = query_text.lower()
         
         if any(word in query_lower for word in ['project', 'repository', 'code']):
             follow_up_suggestions = [
-                "Would you like me to explain the technical architecture in more detail?",
-                "Should I create a flowchart for the development process?",
-                "Would you like to see the project structure diagram?",
-                "Should I provide implementation steps for this project?",
-                "Would you like to compare this with similar projects?"
+                "Show me the technical architecture",
+                "Create a development flowchart",
+                "Explain the implementation steps",
+                "Compare with similar projects",
+                "Show me the project structure"
             ]
         elif any(word in query_lower for word in ['process', 'workflow', 'steps']):
             follow_up_suggestions = [
-                "Would you like me to create a detailed process flowchart?",
-                "Should I explain each step in more detail?",
-                "Would you like to see the decision points in the workflow?",
-                "Should I provide automation suggestions for this process?",
-                "Would you like to see the efficiency analysis?"
+                "Create a detailed process flowchart",
+                "Explain each step in detail",
+                "Show me the decision points",
+                "Suggest automation opportunities",
+                "Analyze efficiency improvements"
             ]
         elif any(word in query_lower for word in ['technology', 'stack', 'framework']):
             follow_up_suggestions = [
-                "Would you like me to create a technology comparison table?",
-                "Should I explain the architecture diagram in detail?",
-                "Would you like to see the dependency relationships?",
-                "Should I provide migration guidelines?",
-                "Would you like to see performance benchmarks?"
+                "Create a technology comparison",
+                "Explain the architecture diagram",
+                "Show dependency relationships",
+                "Provide migration guidelines",
+                "Show performance benchmarks"
             ]
         else:
             follow_up_suggestions = [
-                "Would you like me to explain any specific aspect in more detail?",
-                "Should I create a flowchart for the process flow?",
-                "Would you like to see the technical architecture diagram?",
-                "Should I provide implementation steps for this?",
-                "Would you like to compare this with similar projects?"
+                "Explain this in more detail",
+                "Create a flowchart for this",
+                "Show me the architecture",
+                "Provide implementation steps",
+                "Compare with similar topics"
             ]
         
         follow_up = follow_up_suggestions[hash(query_text) % len(follow_up_suggestions)]
