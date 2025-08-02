@@ -537,6 +537,9 @@ graph TD
             follow_ups = EnhancedResponseFormatter._generate_follow_up_recommendations(query_text)
             response_text += f"\n\n### 💬 **Follow-up Options**\n{follow_ups}"
         
+        # Add variety to make responses more dynamic
+        response_text = EnhancedResponseFormatter._add_response_variety(response_text)
+        
         return response_text
     
     @staticmethod
@@ -699,66 +702,215 @@ graph TD
     @staticmethod
     def _generate_helpful_fallback_response(query_text: str) -> str:
         """Generate a helpful fallback response instead of generic content"""
+        import random
+        from datetime import datetime
+        
         query_lower = query_text.lower()
+        current_hour = datetime.now().hour
+        
+        # Time-based greetings
+        if current_hour < 12:
+            greeting = "Good morning! 🌅"
+        elif current_hour < 17:
+            greeting = "Good afternoon! ☀️"
+        else:
+            greeting = "Good evening! 🌙"
+        
+        # Add some variety with different response styles
+        response_styles = [
+            "professional",
+            "friendly", 
+            "technical",
+            "casual"
+        ]
+        style = random.choice(response_styles)
         
         if any(word in query_lower for word in ['hello', 'hi', 'hey', 'greeting']):
-            return """## 🤖 **Welcome to Agentic Mentor**
+            responses = [
+                f"""## 🤖 **{greeting} Welcome to Agentic Mentor**
 
-### 🎯 **How I Can Help**
-- **Project Analysis** - Understand codebases and architectures
-- **Process Optimization** - Improve workflows and efficiency
-- **Technical Guidance** - Get implementation advice
-- **Knowledge Discovery** - Find relevant information
+### 🎯 **What I Can Do For You**
+- **🔍 Code Analysis** - Deep dive into any codebase
+- **📊 Process Mapping** - Create workflow diagrams
+- **⚙️ Technical Guidance** - Get step-by-step implementation help
+- **📚 Knowledge Search** - Find answers across all your data sources
 
-### 💡 **Getting Started**
-- Ask about specific projects or repositories
-- Request process flowcharts and diagrams
-- Get technical implementation guidance
-- Explore knowledge base contents
+### 💡 **Quick Start Examples**
+- "Show me the architecture of [project name]"
+- "Create a flowchart for our deployment process"
+- "Explain how authentication works in our system"
+- "What's the tech stack for [repository]?"
 
-### 🎯 **Next Steps**
-1. Ask about a specific project
-2. Request a process analysis
-3. Get technical implementation help
-4. Explore available knowledge"""
+### 🎯 **Ready to Help**
+1. **Ask about specific projects** - I'll analyze codebases
+2. **Request process flows** - I'll create diagrams
+3. **Get technical help** - I'll provide implementation guidance
+4. **Explore knowledge** - I'll search across all sources""",
+                
+                f"""## 🚀 **{greeting} I'm Your AI Development Assistant**
+
+### 🎯 **My Superpowers**
+- **🏗️ Architecture Analysis** - Understand complex systems
+- **🔄 Process Optimization** - Improve workflows and efficiency
+- **⚡ Technical Implementation** - Get practical coding guidance
+- **🔍 Intelligent Search** - Find relevant information instantly
+
+### 💡 **Try These Queries**
+- "Analyze the architecture of [project]"
+- "Show me the deployment workflow"
+- "Explain the authentication system"
+- "What technologies does [repo] use?"
+
+### 🎯 **Let's Get Started**
+1. **Project Analysis** - Tell me about a specific project
+2. **Process Review** - Ask about workflows and processes
+3. **Technical Help** - Get implementation guidance
+4. **Knowledge Search** - Find specific information""",
+                
+                f"""## 🎯 **{greeting} Your AI-Powered Development Partner**
+
+### 🎯 **How I Can Assist**
+- **📋 Project Deep Dives** - Comprehensive codebase analysis
+- **🔄 Workflow Optimization** - Process improvement and automation
+- **⚙️ Technical Solutions** - Practical implementation guidance
+- **🔍 Smart Knowledge Search** - Find answers across all sources
+
+### 💡 **Sample Questions**
+- "What's the architecture of [project name]?"
+- "Create a flowchart for our CI/CD process"
+- "How does our authentication work?"
+- "Show me the tech stack for [repository]"
+
+### 🎯 **Ready When You Are**
+1. **Project Analysis** - Ask about any codebase
+2. **Process Mapping** - Get workflow diagrams
+3. **Technical Guidance** - Implementation help
+4. **Knowledge Discovery** - Search across sources"""
+            ]
+            
+            return random.choice(responses)
         
         elif any(word in query_lower for word in ['help', 'what', 'how']):
-            return """## 🆘 **Agentic Mentor Help**
+            responses = [
+                """## 🆘 **Agentic Mentor Help Center**
 
 ### 🎯 **My Capabilities**
-- **Project Analysis** - Deep dive into codebases
-- **Process Mapping** - Create workflow diagrams
-- **Technical Guidance** - Implementation strategies
-- **Knowledge Search** - Find relevant information
+- **🔍 Deep Code Analysis** - Understand any codebase structure
+- **📊 Process Visualization** - Create workflow diagrams and flowcharts
+- **⚙️ Technical Implementation** - Step-by-step development guidance
+- **🔍 Intelligent Knowledge Search** - Find information across all sources
 
 ### 💡 **Example Queries**
-- "Tell me about the project architecture"
-- "Create a process flowchart for deployment"
-- "Explain the authentication system"
+- "Tell me about the [project] architecture"
+- "Create a flowchart for our deployment process"
+- "Explain how our authentication system works"
 - "Show me the tech stack comparison"
 
-### 🎯 **Next Steps**
-1. Ask about a specific project
-2. Request a process analysis
-3. Get technical guidance
-4. Explore knowledge base"""
+### 🎯 **Getting Started**
+1. **Ask about projects** - "Analyze [project name]"
+2. **Request processes** - "Show me the deployment workflow"
+3. **Get technical help** - "How do I implement [feature]?"
+4. **Search knowledge** - "Find information about [topic]"
+""",
+                
+                """## 📚 **Agentic Mentor User Guide**
+
+### 🎯 **What I Do Best**
+- **🏗️ Architecture Analysis** - Deep dive into system design
+- **🔄 Process Mapping** - Visualize workflows and procedures
+- **⚡ Technical Guidance** - Practical implementation advice
+- **🔍 Knowledge Discovery** - Search across all data sources
+
+### 💡 **Try These Commands**
+- "Analyze the architecture of [project]"
+- "Create a process flowchart for [workflow]"
+- "Explain the implementation of [feature]"
+- "Show me the technology stack for [repo]"
+
+### 🎯 **Quick Actions**
+1. **Project Analysis** - "Tell me about [project]"
+2. **Process Review** - "Show me the [process] workflow"
+3. **Technical Help** - "How do I [implementation]?"
+4. **Knowledge Search** - "Find [information]"
+"""
+            ]
+            
+            return random.choice(responses)
         
         else:
-            return """## 📋 **Information Request**
+            responses = [
+                """## 📋 **Information Request**
 
 ### 🎯 **What I Found**
-- Your query requires more specific context
+- Your query needs more specific context
 - I can help with projects, processes, and technical topics
 - Let me know what specific area you'd like to explore
 
 ### 💡 **Suggested Topics**
-- **Project Analysis** - Codebases and architectures
-- **Process Optimization** - Workflows and efficiency
-- **Technical Implementation** - Development guidance
-- **Knowledge Discovery** - Information search
+- **🏗️ Project Analysis** - Codebases and architectures
+- **🔄 Process Optimization** - Workflows and efficiency
+- **⚙️ Technical Implementation** - Development guidance
+- **🔍 Knowledge Discovery** - Information search
 
 ### 🎯 **Next Steps**
 1. Ask about a specific project or repository
 2. Request a process or workflow analysis
 3. Get technical implementation guidance
-4. Explore available knowledge sources""" 
+4. Explore available knowledge sources
+""",
+                
+                """## 🤔 **Need More Context**
+
+### 🎯 **I Can Help With**
+- **📊 Project Analysis** - Deep dive into any codebase
+- **🔄 Process Mapping** - Create workflow diagrams
+- **⚙️ Technical Guidance** - Implementation strategies
+- **🔍 Knowledge Search** - Find relevant information
+
+### 💡 **Examples**
+- "Tell me about [project name] architecture"
+- "Create a flowchart for [process]"
+- "Explain how [feature] works"
+- "Show me the tech stack for [repo]"
+
+### 🎯 **Let's Get Specific**
+1. **Project Analysis** - "Analyze [project]"
+2. **Process Review** - "Map [workflow]"
+3. **Technical Help** - "Implement [feature]"
+4. **Knowledge Search** - "Find [information]"
+"""
+            ]
+            
+            return random.choice(responses)
+    
+    @staticmethod
+    def _add_response_variety(response_text: str) -> str:
+        """Add variety to responses to make them more dynamic"""
+        import random
+        
+        # Add random emojis and styling variations
+        emoji_variations = {
+            "🎯": ["🎯", "🎪", "🎨", "🎭"],
+            "💡": ["💡", "💭", "💬", "💫"],
+            "📊": ["📊", "📈", "📉", "📋"],
+            "⚙️": ["⚙️", "🔧", "🛠️", "🔨"],
+            "🔍": ["🔍", "🔎", "🔐", "🔓"]
+        }
+        
+        # Replace some emojis with variations
+        for original, variations in emoji_variations.items():
+            if original in response_text and random.random() < 0.3:
+                response_text = response_text.replace(original, random.choice(variations), 1)
+        
+        # Add some variety to section headers
+        header_variations = {
+            "### 🎯 **": ["### 🎯 **", "### 🎪 **", "### 🎨 **"],
+            "### 💡 **": ["### 💡 **", "### 💭 **", "### 💬 **"],
+            "### 📊 **": ["### 📊 **", "### 📈 **", "### 📋 **"]
+        }
+        
+        for original, variations in header_variations.items():
+            if original in response_text and random.random() < 0.2:
+                response_text = response_text.replace(original, random.choice(variations), 1)
+        
+        return response_text 

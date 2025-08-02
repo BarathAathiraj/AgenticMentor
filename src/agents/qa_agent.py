@@ -221,10 +221,15 @@ CRITICAL: Keep it SHORT and CRISP. Each sentence on new line. Each bullet on sin
             "awaiting further instructions", 
             "further information is needed",
             "general inquiry",
-            "n/a"
+            "n/a",
+            "### 💡 **Summary**",
+            "### 🎯 **Next Steps**"
         ]):
             # Generate a more helpful response
             response_text = EnhancedResponseFormatter._generate_helpful_fallback_response(query_text)
+        
+        # Clean up any duplicate sections before enhancing
+        response_text = EnhancedResponseFormatter._clean_duplicate_sections(response_text)
         
         # Enhance the response with structured formatting
         response_text = EnhancedResponseFormatter.enhance_response_structure(response_text, query_text, search_results)

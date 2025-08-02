@@ -36,6 +36,11 @@ pydantic-settings>=2.0.0
 loguru>=0.7.0
 click>=8.1.0
 
+# Response Enhancement
+faker>=20.0.0
+python-dateutil>=2.8.0
+colorama>=0.4.6
+
 # Development
 pytest>=7.4.0
 black>=23.0.0
