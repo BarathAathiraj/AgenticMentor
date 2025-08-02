@@ -1,7 +1,9 @@
 """
-Crawler agents for extracting knowledge from various sources
+Knowledge crawlers for Agentic Mentor
 """
 
+import asyncio
+import base64
 import uuid
 import re
 from datetime import datetime
@@ -10,6 +12,13 @@ from loguru import logger
 
 from src.models import KnowledgeChunk, SourceType
 from src.config import settings
+
+try:
+    from github import Github
+    GITHUB_AVAILABLE = True
+except ImportError:
+    GITHUB_AVAILABLE = False
+    logger.warning("GitHub API not available. Install with: pip install PyGithub")
 
 
 class BaseCrawler:
@@ -61,101 +70,191 @@ class GitHubCrawler(BaseCrawler):
     
     async def crawl(self, config: Dict[str, Any]) -> List[KnowledgeChunk]:
         """Crawl GitHub repositories"""
+        chunks = []
+        
+        if not GITHUB_AVAILABLE:
+            self.logger.error("GitHub API not available. Please install PyGithub")
+            return []
+        
         if not self.github_token:
-            self.logger.warning("GitHub token not configured")
+            self.logger.error("GitHub token not configured")
             return []
         
         try:
-            from github import Github
-            
+            # Initialize GitHub client
             g = Github(self.github_token)
-            chunks = []
+            self.logger.info(f"Initialized GitHub client for organization: {self.organization}")
             
-            # Crawl specified repositories
             repos_to_crawl = config.get('repos', self.repos)
+            organization = config.get('organization', self.organization)
+            
+            self.logger.info(f"Starting crawl for {len(repos_to_crawl)} repositories")
             
             for repo_name in repos_to_crawl:
                 try:
-                    repo_chunks = await self._crawl_repository(g, repo_name)
+                    # Add organization prefix if not already present
+                    full_repo_name = repo_name
+                    if organization and not '/' in repo_name:
+                        full_repo_name = f"{organization}/{repo_name}"
+                    
+                    self.logger.info(f"Crawling repository: {full_repo_name}")
+                    repo_chunks = await self._crawl_repository(g, full_repo_name)
                     chunks.extend(repo_chunks)
+                    self.logger.info(f"Successfully crawled {len(repo_chunks)} chunks from {full_repo_name}")
+                    
                 except Exception as e:
                     self.logger.error(f"Error crawling repo {repo_name}: {e}")
+                    # Continue with other repos even if one fails
+                    continue
             
-            self.logger.info(f"Crawled {len(chunks)} chunks from GitHub")
+            self.logger.info(f"GitHub crawl completed. Total chunks: {len(chunks)}")
             return chunks
             
         except Exception as e:
-            self.logger.error(f"Error in GitHub crawler: {e}")
+            self.logger.error(f"Error initializing GitHub crawler: {e}")
             return []
     
-    async def _crawl_repository(self, github_client, repo_name: str) -> List[KnowledgeChunk]:
-        """Crawl a single repository"""
+    async def _crawl_repository(self, g: Github, repo_name: str) -> List[KnowledgeChunk]:
+        """Crawl a single GitHub repository"""
         chunks = []
         
         try:
-            repo = github_client.get_repo(repo_name)
+            repo = g.get_repo(repo_name)
+            self.logger.info(f"Successfully accessed repository: {repo_name}")
             
-            # Crawl README
-            if repo.description:
-                chunk = self._create_chunk(
-                    content=f"Repository: {repo_name}\nDescription: {repo.description}",
-                    source_id=f"{repo_name}/description",
-                    source_url=repo.html_url,
-                    metadata={"type": "description", "language": repo.language}
-                )
-                chunks.append(chunk)
+            # Get repository information
+            topics = repo.get_topics()
+            repo_info = {
+                "name": repo.name,
+                "description": repo.description or "No description available",
+                "language": repo.language or "Unknown",
+                "stars": repo.stargazers_count,
+                "forks": repo.forks_count,
+                "created_at": repo.created_at.isoformat() if repo.created_at else "Unknown",
+                "updated_at": repo.updated_at.isoformat() if repo.updated_at else "Unknown",
+                "topics": ", ".join(topics) if topics else "None",
+                "homepage": repo.homepage or "None",
+                "license": repo.license.name if repo.license else "None"
+            }
             
-            # Crawl README file
+            # Create repository overview chunk
+            overview_content = f"""# {repo.name}
+
+**Description:** {repo_info['description']}
+**Language:** {repo_info['language']}
+**Stars:** {repo_info['stars']}
+**Forks:** {repo_info['forks']}
+**Created:** {repo_info['created_at']}
+**Updated:** {repo_info['updated_at']}
+**Topics:** {', '.join(repo_info['topics']) if repo_info['topics'] else 'None'}
+**Homepage:** {repo_info['homepage'] or 'None'}
+**License:** {repo_info['license'] or 'None'}
+
+## Repository Overview
+This repository contains the source code for {repo.name}. {repo_info['description']}
+"""
+            
+            overview_chunk = KnowledgeChunk(
+                id=str(uuid.uuid4()),
+                content=overview_content,
+                source_type=SourceType.GITHUB,
+                source_id=f"{repo_name}/overview",
+                source_url=repo.html_url,
+                metadata=repo_info,
+                created_at=datetime.now(),
+                updated_at=datetime.now()
+            )
+            chunks.append(overview_chunk)
+            
+            # Get README content
             try:
                 readme = repo.get_readme()
-                content = readme.decoded_content.decode('utf-8')
-                chunk = self._create_chunk(
-                    content=self._clean_content(content),
+                readme_content = base64.b64decode(readme.content).decode('utf-8')
+                
+                readme_chunk = KnowledgeChunk(
+                    id=str(uuid.uuid4()),
+                    content=f"# README for {repo.name}\n\n{readme_content}",
+                    source_type=SourceType.GITHUB,
                     source_id=f"{repo_name}/readme",
                     source_url=f"{repo.html_url}/blob/main/README.md",
-                    metadata={"type": "readme", "language": repo.language}
+                    metadata={"type": "readme", "language": repo_info['language']},
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
                 )
-                chunks.append(chunk)
+                chunks.append(readme_chunk)
+                self.logger.info(f"Added README content for {repo_name}")
+                
             except Exception as e:
-                self.logger.debug(f"No README found for {repo_name}: {e}")
+                self.logger.warning(f"Could not get README for {repo_name}: {e}")
             
-            # Crawl issues
-            issues = repo.get_issues(state='all', sort='updated', direction='desc')
-            for issue in list(issues)[:50]:  # Limit to recent issues
-                content = f"Issue #{issue.number}: {issue.title}\n\n{issue.body or ''}"
-                chunk = self._create_chunk(
-                    content=self._clean_content(content),
-                    source_id=f"{repo_name}/issue/{issue.number}",
-                    source_url=issue.html_url,
-                    metadata={
-                        "type": "issue",
-                        "state": issue.state,
-                        "labels": [label.name for label in issue.labels],
-                        "created_at": issue.created_at.isoformat()
-                    }
-                )
-                chunks.append(chunk)
+            # Get recent commits
+            try:
+                commits = repo.get_commits()
+                recent_commits = []
+                for commit in list(commits)[:10]:  # Get last 10 commits
+                    recent_commits.append({
+                        "sha": commit.sha,
+                        "message": commit.commit.message,
+                        "author": commit.commit.author.name,
+                        "date": commit.commit.author.date.isoformat()
+                    })
+                
+                if recent_commits:
+                    commits_content = f"# Recent Commits for {repo.name}\n\n"
+                    for commit in recent_commits:
+                        commits_content += f"## {commit['sha'][:8]} - {commit['message']}\n"
+                        commits_content += f"**Author:** {commit['author']}\n"
+                        commits_content += f"**Date:** {commit['date']}\n\n"
+                    
+                    commits_chunk = KnowledgeChunk(
+                        id=str(uuid.uuid4()),
+                        content=commits_content,
+                        source_type=SourceType.GITHUB,
+                        source_id=f"{repo_name}/commits",
+                        source_url=f"{repo.html_url}/commits",
+                        metadata={"type": "commits", "count": len(recent_commits)},
+                        created_at=datetime.now(),
+                        updated_at=datetime.now()
+                    )
+                    chunks.append(commits_chunk)
+                    self.logger.info(f"Added {len(recent_commits)} recent commits for {repo_name}")
+                    
+            except Exception as e:
+                self.logger.warning(f"Could not get commits for {repo_name}: {e}")
             
-            # Crawl pull requests
-            prs = repo.get_pulls(state='all', sort='updated', direction='desc')
-            for pr in list(prs)[:30]:  # Limit to recent PRs
-                content = f"PR #{pr.number}: {pr.title}\n\n{pr.body or ''}"
-                chunk = self._create_chunk(
-                    content=self._clean_content(content),
-                    source_id=f"{repo_name}/pr/{pr.number}",
-                    source_url=pr.html_url,
-                    metadata={
-                        "type": "pull_request",
-                        "state": pr.state,
-                        "created_at": pr.created_at.isoformat()
-                    }
+            # Get repository structure (top-level files and directories)
+            try:
+                contents = repo.get_contents("")
+                structure_content = f"# Repository Structure for {repo.name}\n\n"
+                
+                for content in contents:
+                    structure_content += f"- **{content.name}** ({content.type})\n"
+                    if content.type == "file":
+                        structure_content += f"  - Size: {content.size} bytes\n"
+                    structure_content += f"  - Path: {content.path}\n\n"
+                
+                structure_chunk = KnowledgeChunk(
+                    id=str(uuid.uuid4()),
+                    content=structure_content,
+                    source_type=SourceType.GITHUB,
+                    source_id=f"{repo_name}/structure",
+                    source_url=repo.html_url,
+                    metadata={"type": "structure", "file_count": len(contents)},
+                    created_at=datetime.now(),
+                    updated_at=datetime.now()
                 )
-                chunks.append(chunk)
+                chunks.append(structure_chunk)
+                self.logger.info(f"Added repository structure for {repo_name}")
+                
+            except Exception as e:
+                self.logger.warning(f"Could not get repository structure for {repo_name}: {e}")
+            
+            self.logger.info(f"Successfully crawled {len(chunks)} chunks from {repo_name}")
+            return chunks
             
         except Exception as e:
             self.logger.error(f"Error crawling repository {repo_name}: {e}")
-        
-        return chunks
+            return []
 
 
 class JiraCrawler(BaseCrawler):

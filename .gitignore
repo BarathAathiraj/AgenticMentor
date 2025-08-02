@@ -60,6 +60,7 @@ chromadb/
 
 # API Keys and Secrets
 .env
+.env.backup
 .env.local
 .env.production
 .env.staging

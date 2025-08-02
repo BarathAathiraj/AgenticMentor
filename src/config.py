@@ -15,13 +15,14 @@ class Settings(BaseSettings):
     openai_model: str = Field("gpt-4-turbo-preview", env="OPENAI_MODEL")
     
     # Gemini Configuration
-    use_gemini: bool = Field(False, env="USE_GEMINI")
-    gemini_api_key: Optional[str] = Field(None, env="GEMINI_API_KEY")
+    use_gemini: bool = Field(default=False, env="USE_GEMINI")
+    gemini_api_key: str = Field(default="", env="GEMINI_API_KEY")
+    gemini_model: str = Field(default="gemini-1.5-flash", env="GEMINI_MODEL")
     
     # Grok Configuration
-    use_grok: bool = Field(False, env="USE_GROK")
-    grok_api_key: Optional[str] = Field(None, env="GROK_API_KEY")
-    grok_model: str = Field("grok-beta", env="GROK_MODEL")
+    use_grok: bool = Field(default=False, env="USE_GROK")
+    grok_api_key: str = Field(default="", env="GROK_API_KEY")
+    grok_model: str = Field(default="llama3-70b-8192", env="GROK_MODEL")
     
     # Vector Store Configuration
     vector_store_type: str = Field("chroma", env="VECTOR_STORE_TYPE")

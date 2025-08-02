@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Agentic Mentor - AI Knowledge Explorer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@4.3.0/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.5/dist/purify.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.6.1/dist/mermaid.min.js"></script>
+    <style>
+        .chat-container {
+            height: calc(100vh - 200px);
+        }
+        .message {
+            animation: fadeIn 0.3s ease-in;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .markdown-content h1, .markdown-content h2, .markdown-content h3 {
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        .markdown-content h1 { font-size: 1.5rem; }
+        .markdown-content h2 { font-size: 1.25rem; }
+        .markdown-content h3 { font-size: 1.125rem; }
+        .markdown-content ul, .markdown-content ol {
+            margin-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .markdown-content li {
+            margin-bottom: 0.25rem;
+        }
+        .markdown-content strong {
+            font-weight: 600;
+        }
+        .markdown-content code {
+            background-color: #f3f4f6;
+            padding: 0.125rem 0.25rem;
+            border-radius: 0.25rem;
+            font-family: monospace;
+        }
+        .markdown-content pre {
+            background-color: #f3f4f6;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            margin: 1rem 0;
+        }
+        .markdown-content blockquote {
+            border-left: 4px solid #e5e7eb;
+            padding-left: 1rem;
+            margin: 1rem 0;
+            font-style: italic;
+        }
+        .mermaid {
+            background-color: white;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin: 1rem 0;
+            border: 1px solid #e5e7eb;
+        }
+        .markdown-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 1rem 0;
+        }
+        .markdown-content th, .markdown-content td {
+            border: 1px solid #d1d5db;
+            padding: 0.5rem;
+            text-align: left;
+        }
+        .markdown-content th {
+            background-color: #f9fafb;
+            font-weight: 600;
+        }
+        .stats-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .crawling-indicator {
+            background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+            border: 2px solid #d97706;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background-color: #e5e7eb;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 0.5rem;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .status-indicator {
+            transition: all 0.3s ease;
+        }
+        .status-indicator.online {
+            background-color: #10b981;
+            box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.2);
+        }
+        .status-indicator.offline {
+            background-color: #ef4444;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="min-h-screen">
+        <!-- Header -->
+        <header class="bg-white shadow-sm border-b">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center py-4">
+                    <div class="flex items-center">
+                        <h1 class="text-2xl font-bold text-gray-900">🤖 Agentic Mentor</h1>
+                        <span class="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">AI Knowledge Explorer</span>
+                        <div class="ml-3 flex items-center">
+                            <div id="statusIndicator" class="inline-block w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                            <span class="text-xs text-gray-600">System Status</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-4">
+                        <button onclick="crawlGitHub()" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            🔄 Crawl GitHub
+                        </button>
+                        <button onclick="refreshStats()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors">
+                            📊 Refresh Stats
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <!-- Stats Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+                <div class="stats-card rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                            <span class="text-2xl">📚</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm opacity-90">Documents Indexed</p>
+                            <p class="text-2xl font-bold" id="documentsCount">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                            <span class="text-2xl">🔍</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm opacity-90">Search Queries</p>
+                            <p class="text-2xl font-bold" id="searchQueries">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                            <span class="text-2xl">⚡</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm opacity-90">Response Time</p>
+                            <p class="text-2xl font-bold" id="avgResponseTime">-</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="stats-card rounded-lg p-6 shadow-lg">
+                    <div class="flex items-center">
+                        <div class="p-2 bg-white bg-opacity-20 rounded-lg">
+                            <span class="text-2xl">🎯</span>
+                        </div>
+                        <div class="ml-4">
+                            <p class="text-sm opacity-90">Success Rate</p>
+                            <p class="text-2xl font-bold" id="successRate">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chat Interface -->
+            <div class="bg-white rounded-lg shadow-lg">
+                <div class="p-6 border-b">
+                    <h2 class="text-xl font-semibold text-gray-900">💬 Ask Agentic Mentor</h2>
+                    <p class="text-gray-600 mt-1">Ask questions about your projects, code, or any technical topic</p>
+                </div>
+                
+                <div class="chat-container overflow-y-auto p-6" id="chatContainer">
+                    <div class="message bg-blue-50 border-l-4 border-blue-400 p-4 mb-4 rounded-r-lg">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">🤖</span>
+                            <div>
+                                <p class="font-semibold text-blue-900">Agentic Mentor</p>
+                                <p class="text-blue-700">Hello! I'm your AI knowledge assistant. I can help you understand your projects, analyze code, and provide insights. Ask me anything about your repositories or technical topics!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="p-6 border-t bg-gray-50">
+                    <div class="flex space-x-4">
+                        <div class="flex-1">
+                            <input type="text" id="messageInput" placeholder="Ask a question..." 
+                                   class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                        </div>
+                        <button onclick="sendMessage()" id="sendButton" 
+                                class="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Mermaid
+        mermaid.initialize({
+            startOnLoad: true,
+            theme: 'default',
+            flowchart: {
+                useMaxWidth: true,
+                htmlLabels: true
+            }
+        });
+
+        let isLoading = false;
+        let notificationCount = 0;
+        
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full`;
+            
+            const colors = {
+                success: 'bg-green-500 text-white',
+                error: 'bg-red-500 text-white',
+                info: 'bg-blue-500 text-white',
+                warning: 'bg-yellow-500 text-white'
+            };
+            
+            notification.className += ` ${colors[type]}`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+
+        // Load stats on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            refreshStats();
+            updateStatus();
+            
+            // Update status every 30 seconds
+            setInterval(updateStatus, 30000);
+        });
+
+        async function refreshStats() {
+            try {
+                const response = await fetch('/api/stats');
+                const stats = await response.json();
+                
+                document.getElementById('documentsCount').textContent = stats.total_documents || 0;
+                document.getElementById('searchQueries').textContent = stats.total_queries || 0;
+                document.getElementById('avgResponseTime').textContent = `${(stats.avg_response_time || 0).toFixed(1)}s`;
+                document.getElementById('successRate').textContent = `${(stats.success_rate || 0).toFixed(1)}%`;
+            } catch (error) {
+                console.error('Error loading stats:', error);
+            }
+        }
+
+        async function updateStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                // Update status indicator with enhanced styling
+                const statusIndicator = document.getElementById('statusIndicator');
+                if (statusIndicator) {
+                    if (status.status === 'running') {
+                        statusIndicator.className = 'status-indicator online inline-block w-3 h-3 rounded-full mr-2';
+                        statusIndicator.title = 'System Running - All Systems Operational';
+                    } else {
+                        statusIndicator.className = 'status-indicator offline inline-block w-3 h-3 rounded-full mr-2';
+                        statusIndicator.title = 'System Error - Check Logs';
+                    }
+                }
+                
+                // Update documents count in real-time
+                const documentsCount = document.getElementById('documentsCount');
+                if (documentsCount && status.documents_indexed !== undefined) {
+                    documentsCount.textContent = status.documents_indexed;
+                }
+            } catch (error) {
+                console.error('Error updating status:', error);
+            }
+        }
+
+        async function crawlGitHub() {
+            const button = document.querySelector('button[onclick="crawlGitHub()"]');
+            const originalText = button.textContent;
+            button.textContent = '🔄 Crawling...';
+            button.disabled = true;
+            
+            // Add enhanced crawling indicator to chat
+            const crawlingId = addMessage('assistant', `
+                <div class="crawling-indicator rounded-lg p-6 text-white">
+                    <div class="flex items-center mb-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-white mr-4"></div>
+                        <div>
+                            <p class="font-bold text-lg">🔄 Crawling GitHub Repositories</p>
+                            <p class="text-yellow-100 text-sm">Please wait while I fetch and index your repository data...</p>
+                        </div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-xs mt-2">
+                        <span>Initializing...</span>
+                        <span id="crawl-progress">0%</span>
+                    </div>
+                </div>
+            `, true);
+            
+            // Simulate progress updates with notifications
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                
+                const progressFill = document.querySelector(`#${crawlingId} .progress-fill`);
+                const progressText = document.querySelector(`#${crawlingId} #crawl-progress`);
+                
+                if (progressFill) progressFill.style.width = `${progress}%`;
+                if (progressText) progressText.textContent = `${Math.round(progress)}%`;
+                
+                // Show progress notifications
+                if (progress > 25 && progress < 30) {
+                    showNotification('📚 Reading repository contents...', 'info');
+                } else if (progress > 50 && progress < 55) {
+                    showNotification('🔍 Indexing documents...', 'info');
+                } else if (progress > 75 && progress < 80) {
+                    showNotification('💾 Storing knowledge chunks...', 'info');
+                }
+            }, 500);
+            
+            try {
+                const response = await fetch('/api/crawl/github', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                const result = await response.json();
+                
+                // Remove crawling indicator
+                const crawlingElement = document.getElementById(crawlingId);
+                if (crawlingElement) {
+                    crawlingElement.remove();
+                }
+                
+                if (result.success) {
+                    // Clear progress interval
+                    clearInterval(progressInterval);
+                    
+                    addMessage('assistant', `
+                        <div class="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white shadow-lg">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                                    <span class="text-3xl">✅</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-xl">GitHub Crawling Completed!</p>
+                                    <p class="text-green-100 text-sm">Successfully indexed ${result.chunks || 0} documents from your repositories.</p>
+                                </div>
+                            </div>
+                            <div class="bg-white bg-opacity-10 rounded-lg p-3">
+                                <p class="text-sm font-medium">🎉 Ready to Answer Questions!</p>
+                                <p class="text-xs text-green-100 mt-1">You can now ask me about your projects, code structure, and implementation details.</p>
+                            </div>
+                        </div>
+                    `);
+                    
+                    // Refresh stats after successful crawl
+                    setTimeout(refreshStats, 1000);
+                    
+                    // Show success notification
+                    showNotification(`✅ Successfully indexed ${result.chunks || 0} documents!`, 'success');
+                } else {
+                                    addMessage('assistant', `
+                    <div class="bg-gradient-to-r from-red-500 to-pink-600 rounded-lg p-6 text-white shadow-lg">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-white bg-opacity-20 rounded-full p-3 mr-4">
+                                <span class="text-3xl">❌</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-xl">Crawling Failed</p>
+                                <p class="text-red-100 text-sm">Error: ${result.error || 'Unknown error occurred'}</p>
+                            </div>
+                        </div>
+                        <div class="bg-white bg-opacity-10 rounded-lg p-3">
+                            <p class="text-sm font-medium">🔧 Troubleshooting Tips:</p>
+                            <p class="text-xs text-red-100 mt-1">Check your GitHub token, repository permissions, and network connection.</p>
+                        </div>
+                    </div>
+                `);
+                
+                showNotification('❌ Crawling failed. Check the error details above.', 'error');
+                }
+            } catch (error) {
+                console.error('Error crawling GitHub:', error);
+                
+                // Remove crawling indicator
+                const crawlingElement = document.getElementById(crawlingId);
+                if (crawlingElement) {
+                    crawlingElement.remove();
+                }
+                
+                addMessage('assistant', `
+                    <div class="bg-red-100 border-l-4 border-red-500 p-4">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">❌</span>
+                            <div>
+                                <p class="font-semibold text-red-800">Crawling Failed</p>
+                                <p class="text-red-700 text-sm">Network error occurred while crawling repositories.</p>
+                            </div>
+                        </div>
+                    `);
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
+            }
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const message = input.value.trim();
+            
+            if (!message || isLoading) return;
+            
+            isLoading = true;
+            const sendButton = document.getElementById('sendButton');
+            sendButton.textContent = 'Sending...';
+            sendButton.disabled = true;
+            
+            // Add user message
+            addMessage('user', message);
+            input.value = '';
+            
+            // Add loading message
+            const loadingId = addMessage('assistant', '<div class="loading"></div> Processing your request...', true);
+            
+            try {
+                const response = await fetch('/api/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: message,
+                        user_id: 'user'
+                    })
+                });
+                
+                const result = await response.json();
+                
+                // Remove loading message
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                
+                if (result.success) {
+                    addMessage('assistant', result.response);
+                } else {
+                    addMessage('assistant', '❌ Sorry, I encountered an error processing your request. Please try again.');
+                }
+                
+                // Refresh stats after successful query
+                setTimeout(refreshStats, 1000);
+                
+            } catch (error) {
+                console.error('Error sending message:', error);
+                
+                // Remove loading message
+                const loadingElement = document.getElementById(loadingId);
+                if (loadingElement) {
+                    loadingElement.remove();
+                }
+                
+                addMessage('assistant', '❌ Sorry, I encountered an error. Please try again.');
+            } finally {
+                isLoading = false;
+                sendButton.textContent = 'Send';
+                sendButton.disabled = false;
+            }
+        }
+
+        function addMessage(role, content, isRaw = false) {
+            const container = document.getElementById('chatContainer');
+            const messageId = 'msg-' + Date.now();
+            
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `message ${role === 'user' ? 'ml-12' : 'mr-12'} mb-4`;
+            
+            if (role === 'user') {
+                messageDiv.innerHTML = `
+                    <div class="bg-blue-600 text-white p-4 rounded-lg">
+                        <div class="flex items-center">
+                            <span class="text-2xl mr-3">👤</span>
+                            <div>
+                                <p class="font-semibold">You</p>
+                                <p>${content}</p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                let processedContent = content;
+                
+                if (!isRaw) {
+                    // Process markdown
+                    processedContent = marked.parse(content);
+                    
+                    // Sanitize HTML
+                    processedContent = DOMPurify.sanitize(processedContent);
+                    
+                    // Process Mermaid diagrams
+                    const mermaidBlocks = content.match(/```mermaid\n[\s\S]*?\n```/g);
+                    if (mermaidBlocks) {
+                        mermaidBlocks.forEach((block, index) => {
+                            const diagramCode = block.replace(/```mermaid\n/, '').replace(/\n```/, '');
+                            const diagramId = `mermaid-diagram-${Date.now()}-${index}`;
+                            processedContent = processedContent.replace(block, `<div class="mermaid" id="${diagramId}">${diagramCode}</div>`);
+                        });
+                    }
+                }
+                
+                messageDiv.innerHTML = `
+                    <div class="bg-gray-50 border-l-4 border-green-400 p-4 rounded-r-lg">
+                        <div class="flex items-start">
+                            <span class="text-2xl mr-3">🤖</span>
+                            <div class="flex-1">
+                                <p class="font-semibold text-gray-900 mb-2">Agentic Mentor</p>
+                                <div class="markdown-content text-gray-700">${processedContent}</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Render Mermaid diagrams after a short delay
+                setTimeout(() => {
+                    const mermaidElements = messageDiv.querySelectorAll('.mermaid');
+                    mermaidElements.forEach((element, index) => {
+                        const diagramId = `mermaid-diagram-${Date.now()}-${index}`;
+                        element.id = diagramId;
+                        mermaid.render(diagramId, element.textContent).then(({ svg }) => {
+                            element.innerHTML = svg;
+                        }).catch(error => {
+                            console.error('Error rendering Mermaid diagram:', error);
+                        });
+                    });
+                }, 100);
+            }
+            
+            container.appendChild(messageDiv);
+            container.scrollTop = container.scrollHeight;
+            
+            return messageId;
+        }
+
+        // Handle Enter key
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html> 

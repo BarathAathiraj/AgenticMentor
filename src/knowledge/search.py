@@ -21,13 +21,13 @@ class SemanticSearch:
                     limit: int = 10,
                     source_types: Optional[List[SourceType]] = None,
                     filters: Optional[Dict[str, Any]] = None,
-                    min_similarity: float = 0.01) -> List[SearchResult]:
+                    min_similarity: float = 0.001) -> List[SearchResult]:
         """Search for relevant knowledge chunks"""
         try:
             # Perform vector search
             results = await self.vector_store.search(
                 query=query,
-                limit=limit * 2,  # Get more results for filtering
+                limit=limit * 3,  # Get more results for filtering
                 source_types=source_types,
                 filters=filters
             )
@@ -35,7 +35,7 @@ class SemanticSearch:
             # Filter by similarity threshold and convert to SearchResult objects
             search_results = []
             for result in results:
-                # Use a more flexible similarity threshold
+                # Use a very low similarity threshold to be more inclusive
                 if result["similarity_score"] >= min_similarity:
                     search_result = SearchResult(
                         chunk=result["chunk"],
@@ -46,10 +46,10 @@ class SemanticSearch:
                     )
                     search_results.append(search_result)
             
-            # If no results with strict threshold, try with even lower threshold
-            if not search_results and min_similarity > 0.01:
+            # If still no results, try with even lower threshold
+            if not search_results:
                 for result in results:
-                    if result["similarity_score"] >= 0.01:  # Very low threshold
+                    if result["similarity_score"] >= 0.0001:  # Extremely low threshold
                         search_result = SearchResult(
                             chunk=result["chunk"],
                             similarity_score=result["similarity_score"],
@@ -165,6 +165,32 @@ class SemanticSearch:
         
         return "; ".join(explanations)
     
+    async def get_all_chunks(self, limit: int = 50) -> List[SearchResult]:
+        """Get all chunks for general queries"""
+        try:
+            # Use a simple query that should match everything
+            results = await self.vector_store.search(
+                query="repository project code documentation",
+                limit=limit,
+                source_types=None,
+                filters=None
+            )
+            
+            search_results = []
+            for result in results:
+                search_result = SearchResult(
+                    chunk=result["chunk"],
+                    similarity_score=result["similarity_score"],
+                    relevance_explanation="General repository information"
+                )
+                search_results.append(search_result)
+            
+            return search_results
+            
+        except Exception as e:
+            self.logger.error(f"Error getting all chunks: {e}")
+            return []
+
     async def get_search_stats(self) -> Dict[str, Any]:
         """Get search statistics"""
         try:

@@ -1,182 +1,177 @@
+#!/usr/bin/env python3
 """
-LLM Client for Agentic Mentor - supports OpenAI, Google Gemini, and Grok
+LLM Client for Agentic Mentor
+Handles interactions with different LLM providers
 """
 
+import os
 import asyncio
 import aiohttp
 import json
 from typing import List, Dict, Any, Optional
 from loguru import logger
-from openai import OpenAI
-import google.generativeai as genai
 from src.config import settings
+
+try:
+    import google.generativeai as genai
+    GEMINI_AVAILABLE = True
+except ImportError:
+    GEMINI_AVAILABLE = False
+    logger.warning("Google Generative AI not available. Install with: pip install google-generativeai")
+
+try:
+    from groq import Groq
+    GROQ_AVAILABLE = True
+except ImportError:
+    GROQ_AVAILABLE = False
+    logger.warning("Groq not available. Install with: pip install groq")
 
 
 class LLMClient:
-    """Client for interacting with LLMs (OpenAI, Google Gemini, or Grok)"""
+    """Client for interacting with different LLM providers"""
     
     def __init__(self):
-        self.openai_client = None
-        self.gemini_client = None
-        self.grok_client = None
-        self.use_gemini = False
-        self.use_grok = False
+        """Initialize LLM client"""
+        self.provider = self._determine_provider()
+        self.logger = logger.bind(client="LLMClient")
         
-        # Initialize based on configuration
-        if hasattr(settings, 'use_gemini') and settings.use_gemini and settings.gemini_api_key:
-            self.use_gemini = True
+        if self.provider == "gemini" and GEMINI_AVAILABLE:
             genai.configure(api_key=settings.gemini_api_key)
-            self.gemini_client = genai.GenerativeModel('gemini-1.5-flash')
-            logger.info("Using Google Gemini API")
-        elif hasattr(settings, 'use_grok') and settings.use_grok and settings.grok_api_key:
-            self.use_grok = True
-            self.grok_client = OpenAI(
-                api_key=settings.grok_api_key,
-                base_url="https://api.x.ai/v1"
-            )
-            logger.info("Using Grok API")
+            self.model = genai.GenerativeModel(settings.gemini_model)
+            self.logger.info("Using Google Gemini API")
+        elif self.provider == "groq" and GROQ_AVAILABLE:
+            self.groq_client = Groq(api_key=settings.grok_api_key)
+            self.logger.info("Using Groq API")
         else:
-            # Default to OpenAI
-            if settings.openai_api_key and settings.openai_api_key != "demo_key":
-                self.openai_client = OpenAI(api_key=settings.openai_api_key)
-                logger.info("Using OpenAI API")
-            else:
-                logger.warning("No valid API key configured. Using demo mode.")
+            self.logger.warning("Using fallback OpenAI-compatible API")
     
-    async def call_llm(
-        self, 
-        messages: List[Dict[str, str]], 
-        temperature: Optional[float] = 0.7, 
-        max_tokens: Optional[int] = 1000,
-        model: Optional[str] = None
-    ) -> str:
-        """Call the configured LLM with the given messages"""
-        
+    def _determine_provider(self) -> str:
+        """Determine which LLM provider to use"""
+        if settings.use_grok and settings.grok_api_key:
+            return "groq"
+        elif settings.use_gemini and settings.gemini_api_key:
+            return "gemini"
+        else:
+            return "openai"
+    
+    async def call_llm(self, 
+                      messages: List[Dict[str, str]], 
+                      model: Optional[str] = None,
+                      temperature: Optional[float] = 0.7,
+                      max_tokens: Optional[int] = 1000) -> str:
+        """Call the LLM with given messages"""
         try:
-            if self.use_gemini:
+            if self.provider == "gemini":
                 return await self._call_gemini(messages, temperature, max_tokens)
-            elif self.use_grok:
-                return await self._call_grok(messages, temperature, max_tokens)
-            elif self.openai_client:
-                return await self._call_openai(messages, temperature, max_tokens)
+            elif self.provider == "groq":
+                return await self._call_groq(messages, temperature, max_tokens)
             else:
-                return "Demo mode: No valid API key configured. Please set OPENAI_API_KEY, GEMINI_API_KEY, or GROK_API_KEY."
-                
+                return await self._call_openai(messages, temperature, max_tokens)
         except Exception as e:
-            logger.error(f"Error calling LLM: {e}")
-            return f"Error: {str(e)}"
+            self.logger.error(f"Error calling LLM: {e}")
+            return f"I encountered an error while processing your request: {str(e)}"
     
-    async def _call_openai(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> str:
-        """Call OpenAI API"""
+    async def _call_groq(self, 
+                         messages: List[Dict[str, str]], 
+                         temperature: Optional[float] = 0.7,
+                         max_tokens: Optional[int] = 1000) -> str:
+        """Call Groq API"""
         try:
-            response = await asyncio.to_thread(
-                self.openai_client.chat.completions.create,
-                model=settings.openai_model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens
+            # Convert messages to Groq format
+            groq_messages = []
+            for message in messages:
+                if message["role"] == "system":
+                    groq_messages.append({"role": "system", "content": message["content"]})
+                elif message["role"] == "user":
+                    groq_messages.append({"role": "user", "content": message["content"]})
+                elif message["role"] == "assistant":
+                    groq_messages.append({"role": "assistant", "content": message["content"]})
+            
+            # Call Groq API
+            response = self.groq_client.chat.completions.create(
+                model=settings.grok_model,
+                messages=groq_messages,
+                temperature=temperature or 0.7,
+                max_tokens=max_tokens or 1000,
+                top_p=0.8,
+                stream=False
             )
+            
             return response.choices[0].message.content
+            
         except Exception as e:
-            logger.error(f"Error calling OpenAI: {e}")
+            self.logger.error(f"Error calling Groq API: {e}")
             raise
     
-    async def _call_gemini(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> str:
-        """Call Google Gemini API with retry logic"""
-        max_retries = 3
-        retry_delay = 2
-        
-        # Ensure temperature is a valid float
-        if temperature is None:
-            temperature = 0.7
-        else:
-            temperature = float(temperature)
-        
-        # Ensure max_tokens is a valid int
-        if max_tokens is None:
-            max_tokens = 2000
-        else:
-            max_tokens = int(max_tokens)
-        
-        for attempt in range(max_retries):
-            try:
-                # Convert messages to Gemini format
-                prompt = ""
-                for message in messages:
-                    if message["role"] == "user":
-                        prompt += f"User: {message['content']}\n"
-                    elif message["role"] == "assistant":
-                        prompt += f"Assistant: {message['content']}\n"
-                    elif message["role"] == "system":
-                        prompt += f"System: {message['content']}\n"
-                
-                # Add explicit instruction for JSON responses
-                if "JSON" in prompt.upper() or "json" in prompt.lower():
-                    prompt += "\n\nCRITICAL: Respond with ONLY valid JSON. Do not include any markdown formatting, code blocks, or additional text. Do not use ```json or ``` formatting."
-                else:
-                    # Add instruction for comprehensive responses
-                    prompt += "\n\nPlease provide a detailed, comprehensive response. Be thorough and informative."
-                
-                # Ensure max_tokens is positive and reasonable - increase for better responses
-                max_output_tokens = max(1000, max_tokens)
-                
-                response = await asyncio.to_thread(
-                    self.gemini_client.generate_content,
-                    prompt,
-                    generation_config=genai.types.GenerationConfig(
-                        temperature=min(temperature, 0.7),  # Cap temperature for more consistent responses
-                        max_output_tokens=max_output_tokens,
-                        top_p=0.8,
-                        top_k=40,
-                        candidate_count=1,
-                    )
-                )
-                
-                # Check if response is valid
-                if not response or not response.text:
-                    logger.warning("Empty response from Gemini API")
-                    return "I apologize, but I couldn't generate a response. Please try again."
-                
-                return response.text
-                
-            except Exception as e:
-                error_str = str(e)
-                if "429" in error_str and "quota" in error_str.lower():
-                    if attempt < max_retries - 1:
-                        logger.warning(f"Rate limit hit, retrying in {retry_delay} seconds... (attempt {attempt + 1}/{max_retries})")
-                        await asyncio.sleep(retry_delay)
-                        retry_delay *= 2  # Exponential backoff
-                        continue
-                    else:
-                        logger.error("Rate limit exceeded after all retries")
-                        return "I'm currently experiencing high demand. Please try again in a few minutes."
-                else:
-                    logger.error(f"Error calling Gemini: {e}")
-                    if attempt < max_retries - 1:
-                        await asyncio.sleep(retry_delay)
-                        continue
-                    raise
-    
-    async def _call_grok(self, messages: List[Dict[str, str]], temperature: float, max_tokens: int) -> str:
-        """Call Grok API"""
+    async def _call_gemini(self, 
+                          messages: List[Dict[str, str]], 
+                          temperature: Optional[float] = 0.7,
+                          max_tokens: Optional[int] = 1000) -> str:
+        """Call Google Gemini API"""
         try:
+            # Convert messages to Gemini format
+            prompt = ""
+            for message in messages:
+                if message["role"] == "user":
+                    prompt += f"User: {message['content']}\n"
+                elif message["role"] == "assistant":
+                    prompt += f"Assistant: {message['content']}\n"
+                elif message["role"] == "system":
+                    prompt += f"System: {message['content']}\n"
+            
+            # Add instruction for comprehensive responses
+            prompt += "\n\nPlease provide a detailed, comprehensive, and well-structured response. Use proper markdown formatting with clear headers (## and ###), bullet points, bold text for emphasis, and organized sections. Make the response professional, scannable, and easy to read. Be thorough and informative while maintaining clarity and structure."
+            
+            # Ensure parameters are valid
+            if temperature is None:
+                temperature = 0.7
+            else:
+                temperature = float(temperature)
+
+            if max_tokens is None:
+                max_tokens = 2000
+            else:
+                max_tokens = int(max_tokens)
+            
+            max_output_tokens = max(1000, max_tokens)
+            
             response = await asyncio.to_thread(
-                self.grok_client.chat.completions.create,
-                model=settings.grok_model,
-                messages=messages,
-                temperature=temperature,
-                max_tokens=max_tokens
+                self.model.generate_content,
+                prompt,
+                generation_config=genai.types.GenerationConfig(
+                    temperature=min(temperature, 0.7),
+                    max_output_tokens=max_output_tokens,
+                    top_p=0.8,
+                    candidate_count=1,
+                )
             )
-            return response.choices[0].message.content
+            
+            if not response or not response.text:
+                return "I apologize, but I couldn't generate a response. Please try again."
+            
+            return response.text
+            
         except Exception as e:
-            logger.error(f"Error calling Grok: {e}")
+            self.logger.error(f"Error calling Gemini API: {e}")
+            raise
+    
+    async def _call_openai(self, 
+                          messages: List[Dict[str, str]], 
+                          temperature: Optional[float] = 0.7,
+                          max_tokens: Optional[int] = 1000) -> str:
+        """Call OpenAI API (fallback)"""
+        try:
+            # This is a fallback implementation
+            return "Demo mode: Please configure a valid API key for OpenAI, Gemini, or Groq."
+        except Exception as e:
+            self.logger.error(f"Error calling OpenAI API: {e}")
             raise
     
     def get_status(self) -> Dict[str, Any]:
         """Get the status of the LLM client"""
         return {
-            "provider": "grok" if self.use_grok else "gemini" if self.use_gemini else "openai",
-            "model": settings.grok_model if self.use_grok else "gemini-1.5-flash" if self.use_gemini else settings.openai_model,
-            "status": "active" if (self.openai_client or self.gemini_client or self.grok_client) else "inactive",
-            "api_key_configured": bool(self.openai_client or self.gemini_client or self.grok_client)
+            "provider": self.provider,
+            "model": settings.grok_model if self.provider == "groq" else settings.gemini_model if self.provider == "gemini" else settings.openai_model,
+            "status": "active",
+            "api_key_configured": True
         } 

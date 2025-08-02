@@ -70,6 +70,9 @@ class VectorStore:
             ids = []
             
             for chunk in chunks:
+                # Filter out None values from metadata
+                clean_metadata = {k: v for k, v in chunk.metadata.items() if v is not None}
+                
                 metadatas.append({
                     "id": chunk.id,
                     "source_type": chunk.source_type.value,
@@ -77,7 +80,7 @@ class VectorStore:
                     "source_url": chunk.source_url or "",
                     "created_at": chunk.created_at.isoformat(),
                     "updated_at": chunk.updated_at.isoformat(),
-                    **chunk.metadata
+                    **clean_metadata
                 })
                 ids.append(chunk.id)
             
@@ -156,6 +159,60 @@ class VectorStore:
         except Exception as e:
             self.logger.error(f"Error deleting chunk from vector store: {e}")
             return False
+    
+    async def get_all_chunks(self) -> List[Dict[str, Any]]:
+        """Get all chunks from the vector store"""
+        try:
+            results = self.collection.get(include=['metadatas'])
+            chunks = []
+            
+            self.logger.info(f"Getting all chunks - found {len(results['ids'])} chunks")
+            
+            if not results['ids']:
+                self.logger.warning("No chunks found in vector store")
+                return []
+            
+            # Check if metadatas is None or empty
+            if not results['metadatas']:
+                self.logger.warning("No metadata found in vector store - chunks may not have been stored with metadata")
+                # Return basic chunk info without metadata
+                for i in range(len(results['ids'])):
+                    chunk = {
+                        "id": results['ids'][i],
+                        "content": results['documents'][i],
+                        "source_id": "unknown",
+                        "source_type": "unknown",
+                        "source_url": "",
+                        "metadata": {}
+                    }
+                    chunks.append(chunk)
+                return chunks
+            
+            for i in range(len(results['ids'])):
+                try:
+                    metadata = results['metadatas'][i] if results['metadatas'] and i < len(results['metadatas']) else {}
+                    chunk = {
+                        "id": results['ids'][i],
+                        "content": results['documents'][i] if results['documents'] and i < len(results['documents']) else "",
+                        "source_id": metadata.get('source_id', '') if metadata else '',
+                        "source_type": metadata.get('source_type', 'unknown') if metadata else 'unknown',
+                        "source_url": metadata.get('source_url', '') if metadata else '',
+                        "metadata": metadata if metadata else {}
+                    }
+                    chunks.append(chunk)
+                    
+                    # Log first few chunks for debugging
+                    if i < 3:
+                        self.logger.info(f"Chunk {i}: source_id='{chunk['source_id']}', source_type='{chunk['source_type']}'")
+                except Exception as chunk_error:
+                    self.logger.error(f"Error processing chunk {i}: {chunk_error}")
+                    continue
+            
+            self.logger.info(f"Successfully processed {len(chunks)} chunks")
+            return chunks
+        except Exception as e:
+            self.logger.error(f"Error getting all chunks: {e}")
+            return []
     
     async def get_stats(self) -> Dict[str, Any]:
         """Get vector store statistics"""

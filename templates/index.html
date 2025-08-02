@@ -204,6 +204,25 @@
             animation: particle-float 3s infinite ease-in-out;
         }
 
+        /* Custom scrollbar styling */
+        .scrollbar-thin::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-track {
+            background: rgba(55, 65, 81, 0.5);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.8);
+            border-radius: 3px;
+        }
+
+        .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 1);
+        }
+
         @keyframes particle-float {
             0%, 100% { transform: translateY(0px) rotate(0deg); opacity: 1; }
             50% { transform: translateY(-20px) rotate(180deg); opacity: 0.7; }
@@ -437,6 +456,24 @@
                         <span class="text-gray-300">System Online</span>
                     </div>
                     
+                    <!-- Projects Read Card -->
+                    <div class="glass rounded-lg px-3 py-2 border border-yellow-400/30 relative group">
+                        <div class="flex items-center space-x-2 cursor-pointer" onclick="toggleProjectsList()">
+                            <i data-feather="folder" class="w-4 h-4 text-yellow-400"></i>
+                            <span class="text-sm text-gray-300">Projects:</span>
+                            <span class="text-sm font-semibold text-yellow-400" id="header-projects-count">0</span>
+                            <i data-feather="chevron-down" class="w-3 h-3 text-gray-400"></i>
+                        </div>
+                        
+                        <!-- Projects Dropdown -->
+                        <div id="projects-dropdown" class="hidden absolute top-full right-0 mt-2 w-64 bg-gray-900/95 backdrop-blur-sm rounded-lg p-3 z-50 border border-yellow-400/50 shadow-xl">
+                            <div class="text-xs text-gray-300 mb-2 font-semibold">Projects Crawled:</div>
+                            <div id="projects-list" class="space-y-1 max-h-32 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-gray-800">
+                                <div class="text-xs text-gray-300">Loading projects...</div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <!-- Theme Toggle -->
                     <button onclick="toggleTheme()" class="p-2 rounded-lg glass hover-glow theme-toggle" id="theme-toggle">
                         <i data-feather="moon" class="w-5 h-5" id="theme-icon"></i>
@@ -445,6 +482,14 @@
 
                 <!-- Mobile Controls -->
                 <div class="flex md:hidden items-center space-x-2">
+                    <!-- Mobile Projects Card -->
+                    <div class="glass rounded-lg px-2 py-1 border border-yellow-400/30">
+                        <div class="flex items-center space-x-1">
+                            <i data-feather="folder" class="w-3 h-3 text-yellow-400"></i>
+                            <span class="text-xs font-semibold text-yellow-400" id="mobile-projects-count">0</span>
+                        </div>
+                    </div>
+                    
                     <button onclick="toggleTheme()" class="p-2 rounded-lg glass hover-glow theme-toggle" id="theme-toggle-mobile">
                         <i data-feather="moon" class="w-4 h-4" id="theme-icon-mobile"></i>
                     </button>
@@ -502,10 +547,10 @@
                 <div class="glass rounded-lg p-4">
                     <h3 class="font-semibold text-white mb-2">Quick Actions</h3>
                     <div class="space-y-2">
-                        <button onclick="crawlGitHub(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
+                        <button onclick="crawlProjects(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
                             <div class="flex items-center space-x-2">
-                                <i data-feather="github" class="w-4 h-4"></i>
-                                <span class="text-sm">Crawl GitHub</span>
+                                <i data-feather="folder" class="w-4 h-4"></i>
+                                <span class="text-sm">Crawl Projects</span>
                             </div>
                         </button>
                         <button onclick="crawlConfluence(); toggleMobileMenu();" class="w-full text-left p-2 rounded hover:bg-white/10 transition-colors">
@@ -622,32 +667,22 @@
                         </div>
                     </div>
 
-                    <div class="stats-card rounded-xl p-4 fade-in">
-                        <div class="flex items-center justify-between">
-                            <div>
-                                <p class="text-sm text-gray-400">AI Model</p>
-                                                                 <p class="text-lg font-semibold text-white" id="model-name">Llama 3.1 8B Instruct</p>
-                            </div>
-                            <div class="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">
-                                <i data-feather="cpu" class="w-6 h-6 text-white"></i>
-                            </div>
-                        </div>
-                    </div>
+
                 </div>
 
                 <!-- Quick Actions -->
                 <div class="space-y-4">
                     <h3 class="text-lg font-semibold gradient-text">Quick Actions</h3>
                     <div class="space-y-3">
-                        <button onclick="crawlGitHub()" 
+                        <button onclick="crawlProjects()" 
                                 class="w-full glass rounded-lg p-4 text-left hover-glow transition-all duration-300">
                             <div class="flex items-center space-x-3">
                                 <div class="w-10 h-10 bg-gradient-to-r from-gray-600 to-gray-700 rounded-lg flex items-center justify-center">
-                                    <i data-feather="github" class="w-5 h-5 text-white"></i>
+                                    <i data-feather="folder" class="w-5 h-5 text-white"></i>
                                 </div>
                                 <div>
-                                    <p class="font-medium text-white">Crawl GitHub</p>
-                                    <p class="text-sm text-gray-400">Index repositories</p>
+                                    <p class="font-medium text-white">Crawl Projects</p>
+                                    <p class="text-sm text-gray-400">Index projects</p>
                                 </div>
                             </div>
                         </button>
@@ -827,20 +862,176 @@
             document.getElementById('typing-indicator').classList.add('hidden');
         }
 
-        // Crawl functions
-        async function crawlGitHub() {
+        // Notification system
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg transform transition-all duration-300 translate-x-full glass`;
+            
+            const colors = {
+                success: 'border-green-500 text-green-400',
+                error: 'border-red-500 text-red-400',
+                info: 'border-blue-500 text-blue-400',
+                warning: 'border-yellow-500 text-yellow-400'
+            };
+            
+            notification.className += ` ${colors[type]}`;
+            notification.innerHTML = `
+                <div class="flex items-center">
+                    <span class="mr-2">${type === 'success' ? '✅' : type === 'error' ? '❌' : type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Animate in
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+            }, 100);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                notification.classList.add('translate-x-full');
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 5000);
+        }
+
+        // Enhanced Crawl functions with visual indicators
+        async function crawlProjects() {
+            const button = document.querySelector('button[onclick="crawlProjects()"]');
+            const originalText = button.textContent;
+            button.textContent = '🔄 Crawling...';
+            button.disabled = true;
+            
+            // Add enhanced crawling indicator to chat
+            const crawlingId = addMessage(`
+                <div class="glass rounded-lg p-6 border-l-4 border-yellow-500">
+                    <div class="flex items-center mb-4">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-400 mr-4"></div>
+                        <div>
+                            <p class="font-bold text-lg gradient-text">🔄 Crawling Projects</p>
+                            <p class="text-gray-300 text-sm">Please wait while I fetch and index your project data...</p>
+                        </div>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2 mb-2">
+                        <div class="bg-gradient-to-r from-yellow-400 to-yellow-600 h-2 rounded-full transition-all duration-300" style="width: 0%" id="crawl-progress"></div>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400">
+                        <span>Initializing...</span>
+                        <span id="crawl-percentage">0%</span>
+                    </div>
+                </div>
+            `, 'assistant');
+            
+            // Simulate progress updates
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += Math.random() * 15;
+                if (progress > 90) progress = 90;
+                
+                const progressBar = document.querySelector(`#${crawlingId} #crawl-progress`);
+                const progressText = document.querySelector(`#${crawlingId} #crawl-percentage`);
+                
+                if (progressBar) progressBar.style.width = `${progress}%`;
+                if (progressText) progressText.textContent = `${Math.round(progress)}%`;
+                
+                // Show progress notifications
+                if (progress > 25 && progress < 30) {
+                    showNotification('📚 Reading project contents...', 'info');
+                } else if (progress > 50 && progress < 55) {
+                    showNotification('🔍 Indexing documents...', 'info');
+                } else if (progress > 75 && progress < 80) {
+                    showNotification('💾 Storing knowledge chunks...', 'info');
+                }
+            }, 500);
+            
             try {
                 const response = await fetch('/api/crawl/github', { method: 'POST' });
                 const data = await response.json();
+                
+                // Clear progress interval
+                clearInterval(progressInterval);
+                
+                // Remove crawling indicator
+                const crawlingElement = document.getElementById(crawlingId);
+                if (crawlingElement) {
+                    crawlingElement.remove();
+                }
+                
                 if (response.ok) {
-                    addMessage('GitHub repositories crawled successfully!', 'assistant');
+                    addMessage(`
+                        <div class="glass rounded-lg p-6 border-l-4 border-green-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-green-500 bg-opacity-20 rounded-full p-3 mr-4">
+                                    <span class="text-2xl">✅</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-xl gradient-text">Project Crawling Completed!</p>
+                                    <p class="text-gray-300 text-sm">Successfully indexed ${data.chunks || 0} documents from your projects.</p>
+                                </div>
+                            </div>
+                            <div class="bg-green-500 bg-opacity-10 rounded-lg p-3">
+                                <p class="text-sm font-medium text-green-400">🎉 Ready to Answer Questions!</p>
+                                <p class="text-xs text-gray-400 mt-1">You can now ask me about your projects, code structure, and implementation details.</p>
+                            </div>
+                        </div>
+                    `, 'assistant');
+                    
+                    showNotification(`✅ Successfully indexed ${data.chunks || 0} documents!`, 'success');
                     getStats();
                     showSuccessAnimation();
+                    showCrawlSuccessCard(data.chunks || 0);
                 } else {
-                    addMessage('Error crawling GitHub repositories.', 'assistant');
+                    addMessage(`
+                        <div class="glass rounded-lg p-6 border-l-4 border-red-500">
+                            <div class="flex items-center mb-4">
+                                <div class="bg-red-500 bg-opacity-20 rounded-full p-3 mr-4">
+                                    <span class="text-2xl">❌</span>
+                                </div>
+                                <div>
+                                    <p class="font-bold text-xl text-red-400">Crawling Failed</p>
+                                    <p class="text-gray-300 text-sm">Error: ${data.error || 'Unknown error occurred'}</p>
+                                </div>
+                            </div>
+                            <div class="bg-red-500 bg-opacity-10 rounded-lg p-3">
+                                <p class="text-sm font-medium text-red-400">🔧 Troubleshooting Tips:</p>
+                                <p class="text-xs text-gray-400 mt-1">Check your project permissions and network connection.</p>
+                            </div>
+                        </div>
+                    `, 'assistant');
+                    
+                    showNotification('❌ Crawling failed. Check the error details above.', 'error');
                 }
             } catch (error) {
-                addMessage('Error crawling GitHub repositories.', 'assistant');
+                // Clear progress interval
+                clearInterval(progressInterval);
+                
+                // Remove crawling indicator
+                const crawlingElement = document.getElementById(crawlingId);
+                if (crawlingElement) {
+                    crawlingElement.remove();
+                }
+                
+                addMessage(`
+                    <div class="glass rounded-lg p-6 border-l-4 border-red-500">
+                        <div class="flex items-center mb-4">
+                            <div class="bg-red-500 bg-opacity-20 rounded-full p-3 mr-4">
+                                <span class="text-2xl">❌</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-xl text-red-400">Crawling Failed</p>
+                                <p class="text-gray-300 text-sm">Network error occurred while crawling projects.</p>
+                            </div>
+                        </div>
+                    </div>
+                `, 'assistant');
+                
+                showNotification('❌ Network error occurred while crawling.', 'error');
+            } finally {
+                button.textContent = originalText;
+                button.disabled = false;
             }
         }
 
@@ -882,12 +1073,74 @@
                 const response = await fetch('/api/stats');
                 const data = await response.json();
                 
+                console.log('Stats response:', data);
+                
                 if (response.ok) {
-                    document.getElementById('documents-count').textContent = data.documents || 0;
+                    const documentCount = data.documents || 0;
+                    const projectsCount = data.repositories || 0;
+                    
+                    console.log(`Updating stats - Documents: ${documentCount}, Projects: ${projectsCount}`);
+                    
+                    // Update document counts
+                    document.getElementById('documents-count').textContent = documentCount;
                     document.getElementById('sources-count').textContent = data.sources || 0;
+                    
+                    // Update projects counts
+                    document.getElementById('header-projects-count').textContent = projectsCount;
+                    document.getElementById('mobile-projects-count').textContent = projectsCount;
+                    
+                    // Update projects list if available
+                    if (data.repositories_list) {
+                        console.log('Updating projects list:', data.repositories_list);
+                        updateProjectsList(data.repositories_list);
+                    } else {
+                        console.log('No repositories_list found in response');
+                    }
                 }
             } catch (error) {
                 console.error('Error fetching stats:', error);
+            }
+        }
+
+        // Enhanced status update function
+        async function updateSystemStatus() {
+            try {
+                const response = await fetch('/api/status');
+                const status = await response.json();
+                
+                // Update status indicators
+                const statusIndicators = document.querySelectorAll('.w-2.h-2.bg-green-500');
+                statusIndicators.forEach(indicator => {
+                    if (status.status === 'running') {
+                        indicator.className = 'w-2 h-2 bg-green-500 rounded-full animate-pulse';
+                        indicator.title = 'System Running - All Systems Operational';
+                    } else {
+                        indicator.className = 'w-2 h-2 bg-red-500 rounded-full';
+                        indicator.title = 'System Error - Check Logs';
+                    }
+                });
+                
+                // Update documents count in real-time if available
+                if (status.documents_indexed !== undefined) {
+                    const documentsElement = document.getElementById('documents-count');
+                    if (documentsElement) {
+                        documentsElement.textContent = status.documents_indexed;
+                    }
+                }
+                
+                // Update projects count if available
+                if (status.repositories_count !== undefined) {
+                    const headerProjectsElement = document.getElementById('header-projects-count');
+                    const mobileProjectsElement = document.getElementById('mobile-projects-count');
+                    if (headerProjectsElement) {
+                        headerProjectsElement.textContent = status.repositories_count;
+                    }
+                    if (mobileProjectsElement) {
+                        mobileProjectsElement.textContent = status.repositories_count;
+                    }
+                }
+            } catch (error) {
+                console.error('Error updating system status:', error);
             }
         }
 
@@ -1009,6 +1262,59 @@
             }
         }
         
+        // Toggle projects dropdown
+        function toggleProjectsList() {
+            const dropdown = document.getElementById('projects-dropdown');
+            dropdown.classList.toggle('hidden');
+            
+            // Add smooth animation when opening
+            if (!dropdown.classList.contains('hidden')) {
+                dropdown.style.opacity = '0';
+                dropdown.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    dropdown.style.transition = 'all 0.2s ease-out';
+                    dropdown.style.opacity = '1';
+                    dropdown.style.transform = 'translateY(0)';
+                }, 10);
+                
+                // Close dropdown when clicking outside
+                setTimeout(() => {
+                    document.addEventListener('click', closeProjectsDropdown);
+                }, 100);
+            }
+        }
+        
+        // Close projects dropdown
+        function closeProjectsDropdown(event) {
+            const dropdown = document.getElementById('projects-dropdown');
+            const card = event.target.closest('.glass');
+            
+            if (!card || !card.contains(event.target)) {
+                dropdown.classList.add('hidden');
+                document.removeEventListener('click', closeProjectsDropdown);
+            }
+        }
+        
+        // Update projects list
+        function updateProjectsList(projects) {
+            const listElement = document.getElementById('projects-list');
+            
+            if (projects && projects.length > 0) {
+                listElement.innerHTML = projects.map(project => `
+                    <div class="flex items-center text-xs p-1 rounded hover:bg-gray-800/50 transition-colors">
+                        <div class="flex items-center space-x-2">
+                            <i data-feather="folder" class="w-3 h-3 text-yellow-400"></i>
+                            <span class="text-gray-200 font-medium">${project.name}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                listElement.innerHTML = '<div class="text-xs text-gray-400 italic">No projects crawled yet</div>';
+            }
+            
+            feather.replace();
+        }
+        
         // Update theme icons
         function updateThemeIcons() {
             const icons = document.querySelectorAll('#theme-icon, #theme-icon-mobile');
@@ -1047,8 +1353,15 @@
             
             initializeTheme();
             getStats();
+            updateSystemStatus();
             createParticles();
             initializeAnimations();
+            
+            // Update status every 30 seconds
+            setInterval(updateSystemStatus, 30000);
+            
+            // Initialize projects list with empty state
+            updateProjectsList([]);
         });
 
         // Create floating particles effect
@@ -1114,6 +1427,46 @@
             setTimeout(() => {
                 successDiv.remove();
             }, 3000);
+        }
+        
+        // Show crawl success card
+        function showCrawlSuccessCard(documentCount) {
+            // Remove any existing success card
+            const existingCard = document.getElementById('crawl-success-card');
+            if (existingCard) {
+                existingCard.remove();
+            }
+            
+            const successCard = document.createElement('div');
+            successCard.id = 'crawl-success-card';
+            successCard.className = 'fixed top-20 right-4 glass rounded-lg p-4 border border-green-400/30 z-50 fade-in';
+            successCard.innerHTML = `
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-green-500 bg-opacity-20 rounded-full flex items-center justify-center">
+                        <i data-feather="check-circle" class="w-6 h-6 text-green-400"></i>
+                    </div>
+                    <div>
+                        <p class="font-semibold text-white">Crawling Complete!</p>
+                        <p class="text-sm text-gray-300">${documentCount} documents indexed</p>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(successCard);
+            feather.replace();
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                if (successCard.parentNode) {
+                    successCard.style.opacity = '0';
+                    successCard.style.transform = 'translateX(100%)';
+                    setTimeout(() => {
+                        if (successCard.parentNode) {
+                            successCard.remove();
+                        }
+                    }, 300);
+                }
+            }, 5000);
         }
     </script>
 </body>
